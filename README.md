@@ -12,12 +12,13 @@
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
 | M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
-| M4 | Streamlit demo、海报、讲稿 | demo 已实现，8 页 smoke test 通过；海报和讲稿未做 |
+| M4 | Streamlit demo、海报、讲稿 | demo 已实现，9 页 smoke test 通过；海报和讲稿未做 |
 | M5 | 生命周期聚类（扩展） | 已实现，5 类，silhouette 0.285 |
 | M6 | 替代复核页（扩展） | 已实现，20/20 标注，precision@10 0.60，precision@20 0.45 |
 | M7 | 生命周期早期预测（扩展） | 已实现，5 折 accuracy 0.656，macro-F1 0.482 |
+| M8 | 研究地图（扩展） | 已实现，8 个社区，modularity 0.328 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M7 和 demo，海报和讲稿还没有。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M8 和 demo，海报和讲稿还没有。
 
 ## 环境
 
@@ -50,6 +51,7 @@ concept_life/
 │   ├── m3.json               # M3 配置：替代候选和趋势预测窗口
 │   ├── m5.json               # M5 配置：生命周期聚类特征和 k 范围
 │   ├── m7.json               # M7 配置：早期窗口、切分年份、模型参数
+│   ├── m8.json               # M8 配置：图规模、边阈值、Louvain 分辨率
 │   ├── golden_cases.json     # 9 个黄金案例的期望年份范围
 │   └── queries.json          # 170 个抓取查询，分 seeds/classic/recent
 ├── docs/
@@ -69,6 +71,7 @@ concept_life/
 │   ├── m3_trend.py           # M3 趋势预测回测，写 metrics 和预测表
 │   ├── m5_clusters.py        # M5 生命周期聚类，写 clusters CSV 和 summary
 │   ├── m7_early.py           # M7 早期预测，写 metrics 和预测表
+│   ├── m8_map.py             # M8 共现图、Louvain、桥接概念、地图产物
 │   ├── evaluate_replacements.py # M6 从人工标签算 precision@k
 │   ├── smoke_demo.py         # M4 七个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
@@ -85,6 +88,7 @@ concept_life/
 │       ├── predict.py        # 趋势特征、逻辑回归、precision@k、NDCG
 │       ├── cluster.py        # 形状特征、numpy K-means、silhouette
 │       ├── early.py          # 早期特征、softmax、macro-F1、混淆矩阵
+│       ├── community.py      # Louvain 社区发现、betweenness 桥接分数
 │       ├── dashboard.py      # demo 的只读数据加载
 │       └── app.py            # Streamlit 五页界面
 ├── tests/
@@ -96,6 +100,7 @@ concept_life/
 │   ├── test_predict.py       # 指标、未来信息不泄漏
 │   ├── test_cluster.py       # K-means、silhouette、flash 特征
 │   ├── test_early.py         # 早期特征不读未来、softmax、macro-F1
+│   ├── test_map.py           # Louvain 两个块、桥接节点 betweenness
 │   └── test_dashboard.py     # 时间线补年、概念排序、事件统计
 ├── data/
 │   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
@@ -138,10 +143,13 @@ concept_life/
 | `early.py` | 早期特征、softmax、macro-F1、混淆矩阵 | 不用 birth+2 之后的年份 |
 | `m7_early.py` | 5 折和出生年份切分，写 metrics 和预测表 | 不把聚类标签当现实金标 |
 | `m7.json` | M7 早期窗口、切分年份、模型参数 | 不改变 M5 聚类标签 |
+| `community.py` | Louvain 社区发现、betweenness 桥接分数 | 不做时间演化匹配 |
+| `m8_map.py` | 建共现图、跑社区、裁剪地图、写节点和边 | 不画全图，只画 top 300 |
+| `m8.json` | M8 图规模、边阈值、Louvain 分辨率 | 不改变 M3 的替代候选 |
 | `dashboard.py` | demo 的只读数据加载、复核标签合并和 precision 计算 | 不写原始数据，不调 API |
 | `app.py` | Streamlit 七页界面，含替代复核和保存 | 不做模型训练 |
 | `evaluate_replacements.py` | 从 `replacement_review.csv` 算 precision@10/20 | 不替人做判断 |
-| `smoke_demo.py` | 用 AppTest 执行八个页面 | 不做视觉回归 |
+| `smoke_demo.py` | 用 AppTest 执行九个页面 | 不做视觉回归 |
 
 ## 数据流
 
@@ -379,12 +387,13 @@ uv run streamlit run src/concept_life/app.py
 
 demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run python scripts/m5_clusters.py`，否则会提示缺少 `lifecycle_clusters.csv`。
 
-八个页面：
+九个页面：
 
 - 总览：42,460 篇论文、10,957 个概念、3,003 个事件、30 个替代候选；年份直方图和事件分布。
 - 概念时间线：选择概念，看 share 曲线和事件虚线，下面是事件表和证据。
 - 生命周期类型：五类概念的柱状图、peak position × decline speed 散点、按类型看 top 30。
 - 早期预测：只用前三年特征预测五类，同分布 5 折和出生年份切分，混淆矩阵和测试例子。
+- 研究地图：Louvain 社区着色的概念图、社区表、桥接概念榜。
 - 上升与替代：上升榜、候选替代表、人工复核表。
 - 替代复核：逐对看时间线，标是/否/不确定，保存后算 precision。
 - 趋势回测：模型和三条基线的指标，2020 窗口的预测表。
@@ -396,7 +405,7 @@ demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run 
 uv run python scripts/smoke_demo.py
 ```
 
-预期八个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
+预期九个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
 
 ## M7 生命周期早期预测（扩展）
 
@@ -414,6 +423,24 @@ uv run python scripts/m7_early.py
 本次结果：1,333 个概念。同分布 5 折 accuracy 0.656、macro-F1 0.482，多数类 0.476；按出生年份切分，训练 ≤2012 共 365 个、测试 2013-2018 共 968 个，accuracy 0.666、macro-F1 0.455，多数类只有 0.073。昙花一现 F1 0.78，新兴型召回 0.35，复活型测试只有 4 个。
 
 特征是 birth 到 birth+2 的 11 个早期指标，标签是 M5 的全轨迹聚类类型。时间切分是压力测试：晚出生概念的观察窗口更短，测试集类别分布偏向昙花一现和新兴型，所以 macro-F1 和按类 support 比 accuracy 更重要。类型标签是描述性的，不是现实命运，见 `D-023`、`D-024`。
+
+## M8 研究地图（扩展）
+
+用共现图做 Louvain 社区发现，画一张研究地图，并找桥接概念。
+
+```bash
+uv run python scripts/m8_map.py
+```
+
+产物：
+
+- `data/processed/communities.csv`：500 个概念的社区、度数、betweenness。
+- `data/processed/research_map_nodes.csv` 和 `research_map_edges.csv`：top 300 节点和裁剪后的边。
+- `runs/m8/community_summary.json`：modularity、社区大小、每个社区的 top 概念、桥接榜。
+
+本次结果：500 个节点、17,661 条边、8 个社区，modularity 0.328。地图画 300 个节点、1,537 条边。社区大致对应云/系统、ML/CV、软件、图/嵌入、数据库/搜索、概率/因果等。桥接榜前面是 Set (abstract data type)、Process (computing)、Artificial neural network、Scalability 等，很多是泛概念，不是真正的跨领域桥梁；这是概念标签噪声，见 `P-052`。
+
+地图只画 top 300 节点和每个节点最强的 6 条边，避免糊成一团。Louvain 固定 seed=42，社区编号按大小和最小节点 id 排序，换 seed 会变。
 
 ## 产物格式
 
@@ -484,7 +511,7 @@ uv run python scripts/m7_early.py
 uv run python -m unittest discover -s tests -v
 ```
 
-`uv run python -m unittest discover -s tests -v` 预期 30 个测试全部通过。直接用系统 Python 跑时，4 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
+`uv run python -m unittest discover -s tests -v` 预期 32 个测试全部通过。直接用系统 Python 跑时，4 个 dashboard 和 2 个 map 测试会 skip，因为 pandas 和 networkx 只在 uv 环境里。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -500,6 +527,7 @@ uv run python -m unittest discover -s tests -v
 - 时间线补年、概念按总量排序、事件统计。
 - K-means 分簇、silhouette、flash 特征。
 - 早期特征不读未来年份、softmax 能学、macro-F1。
+- Louvain 两个块、桥接节点 betweenness 最高。
 - 替代复核 precision 只算已标注行，未标注不计入分母。
 
 ## 如何扩展
@@ -531,7 +559,8 @@ uv run python -m unittest discover -s tests -v
 - 趋势特征一度用全语料共现图，泄漏未来信息；现在每个窗口只用 T 年以前的图，见 `P-030`、`D-016`。
 - 生命周期聚类只用形状特征，类型名是描述性的，不是金标。没有出现“常青型”，复活型只有 37 个且事件有噪声，见 `D-020`、`P-038`。
 - 早期预测的标签是 M5 聚类类型，不是现实成败。时间切分里类别分布漂移严重，复活型测试只有 4 个，按类指标不稳定，见 `D-024`、`P-047`、`P-048`。
-- demo 已实现，见 M4 到 M7；海报和两分钟讲稿还没做。
+- 研究地图的桥接概念多为泛概念，betweenness 偏向 hub；地图只画 top 300 节点和每个节点最强 6 条边；社区是静态全语料，不做时间演化，见 `P-052`、`D-025`。
+- demo 已实现，见 M4 到 M8；海报和两分钟讲稿还没做。
 
 ## 文档索引
 

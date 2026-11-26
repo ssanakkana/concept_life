@@ -34,6 +34,7 @@
 | W-20261126-09 | 2026-11-26 | 替代候选 20 对标注与 precision 结果 | 完成，fa7ce82 |
 | W-20261126-10 | 2026-11-26 | 焦点转移标准合并与重算 | 完成，589e5a1 |
 | W-20261126-11 | 2026-11-26 | M7 生命周期早期预测 | 完成，0870a86 |
+| W-20261126-12 | 2026-11-26 | M8 社区发现与研究地图 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -611,3 +612,52 @@ uv run python scripts/smoke_demo.py
 - 输出采纳/拒绝：采纳 5 折 + 出生年份双评估；没有直接用五类标签做随机切分就宣称效果好，而是把时间切分的类别漂移一起报告。
 
 **Commit**：0870a86
+
+## W-20261126-12 · 2026-11-26 · 会话 01（续）
+
+**目标**：实现 B：共现图、Louvain 社区发现、桥接概念和研究地图页。
+
+**做了什么**：
+
+- `uv add networkx`，装到 3.6.1，`pyproject.toml` 和 `uv.lock` 更新。
+- 新增 `configs/m8.json`：top 500 概念、边支持度 5、Louvain 分辨率 1.0、地图 top 300、每节点 6 条边。
+- 新增 `src/concept_life/community.py`：Louvain 社区发现和 betweenness 桥接分数。
+- 新增 `scripts/m8_map.py`：建共现图、跑社区、裁剪地图、写节点/边/总结。
+- 新增 `tests/test_map.py`：Louvain 两个块、桥接节点 betweenness 最高，测试从 30 到 32。
+- `dashboard.py` 和 `app.py` 增加“研究地图”页：社区着色地图、社区表、桥接榜。
+- `scripts/smoke_demo.py` 覆盖九个页面。
+
+**命令**：
+
+```bash
+uv add networkx
+uv run python scripts/m8_map.py
+uv run python -m unittest discover -s tests -v
+uv run python scripts/smoke_demo.py
+```
+
+**结果**：
+
+- 500 个节点、17,661 条边、8 个社区，modularity 0.328。
+- 地图画 300 个节点、1,537 条边。
+- 社区大致对应云/系统、ML/CV、软件、图/嵌入、数据库/搜索、概率/因果等。
+- 桥接榜前面是 Set (abstract data type)、Process (computing)、Artificial neural network、Scalability、Graph、Benchmark (surveying) 等，很多是泛概念。
+- 32 个测试通过，demo 九页 0 异常。
+
+**踩坑**：
+
+- 全图 500 节点、17,661 条边，直接画会糊。地图只画 top 300，每个节点保留最强 6 条边。
+- Louvain 有随机性，固定 seed=42；社区编号按大小和最小节点 id 排序。
+- betweenness 偏向 hub，前面很多是泛概念，不是真正的跨领域桥梁。这是概念标签噪声，不能包装成“跨领域概念”。
+- 当前社区是静态全语料，没有做时间演化。时间滑块和社区匹配是下一步。
+
+**下一步**：
+
+- 提交并推送。
+- 最后做海报和两分钟讲稿。
+- 如果还有时间，做社区时间演化（I-009 的未完成部分）或地图时间滑块（I-012 的未完成部分）。
+
+**AI 交互**：
+
+- 关键提示：用户说“先推仓库，再做 B”。
+- 输出采纳/拒绝：采纳“top 500 建图、top 300 画图、每节点 6 条边”的裁剪方案；没有把 betweenness 高的泛概念包装成真正的桥梁。

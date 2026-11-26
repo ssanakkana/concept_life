@@ -26,9 +26,13 @@ from concept_life.dashboard import (  # noqa: E402
     concept_options,
     event_counts,
     load_clusters,
+    load_communities,
+    load_community_summary,
     load_early_metrics,
     load_early_predictions,
     load_events,
+    load_map_edges,
+    load_map_nodes,
     load_predictions,
     load_replacements,
     load_review,
@@ -68,6 +72,7 @@ def require_artifacts() -> None:
                 "uv run python scripts/m3_trend.py",
                 "uv run python scripts/m5_clusters.py",
                 "uv run python scripts/m7_early.py",
+                "uv run python scripts/m8_map.py",
             ]
         ),
         language="bash",
@@ -254,6 +259,87 @@ def page_lifecycle() -> None:
     st.caption(
         "类型名是描述性的，不是金标。复活型样本只有 37 个，且复活事件本身有噪声。"
     )
+
+
+def page_map() -> None:
+    st.title("研究地图")
+    st.caption(
+        "节点是概念，颜色是 Louvain 社区，边是共现。"
+        "地图只画 top 300 概念和每个节点最强的 6 条边，避免糊成一团。"
+    )
+    summary = load_community_summary()
+    nodes = load_map_nodes()
+    edges = load_map_edges()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("图节点", f"{summary['n_nodes_full']:,}")
+    col2.metric("图边", f"{summary['n_edges_full']:,}")
+    col3.metric("社区", summary["n_communities"])
+    col4.metric("modularity", f"{summary['modularity']:.3f}")
+
+    positions = nodes.set_index("concept_id")[["x", "y"]]
+    edge_frame = edges.merge(
+        positions, left_on="source", right_index=True
+    ).rename(columns={"x": "x1", "y": "y1"})
+    edge_frame = edge_frame.merge(
+        positions, left_on="target", right_index=True
+    ).rename(columns={"x": "x2", "y": "y2"})
+
+    line = alt.Chart(edge_frame).mark_rule(
+        opacity=0.18, color="#95a5a6"
+    ).encode(
+        x=alt.X("x1:Q", axis=None),
+        y=alt.Y("y1:Q", axis=None),
+        x2="x2:Q",
+        y2="y2:Q",
+    )
+    points = alt.Chart(nodes).mark_circle(opacity=0.85).encode(
+        x=alt.X("x:Q", axis=None),
+        y=alt.Y("y:Q", axis=None),
+        color=alt.Color("community:N", legend=None),
+        size=alt.Size(
+            "total_count:Q",
+            scale=alt.Scale(type="sqrt", range=[20, 400]),
+            legend=None,
+        ),
+        tooltip=[
+            "name",
+            "community",
+            "total_count",
+            "betweenness",
+            "degree",
+        ],
+    )
+    st.altair_chart((line + points).properties(height=560), width="stretch")
+    st.caption(
+        f"地图画 {summary['map']['nodes']} 个节点、{summary['map']['edges']} 条边。"
+        "betweenness 高的概念很多是“Set”“Process”“Benchmark”这类泛概念，"
+        "这是概念标签噪声，不是真正的跨领域桥梁。"
+    )
+
+    st.divider()
+    left, right = st.columns(2)
+    with left:
+        st.subheader("社区")
+        community_frame = pd.DataFrame(summary["communities"])
+        community_frame["top_concepts"] = community_frame["top_concepts"].apply(
+            lambda values: "、".join(values)
+        )
+        st.dataframe(community_frame, hide_index=True, width="stretch")
+    with right:
+        st.subheader("桥接概念")
+        bridge_frame = pd.DataFrame(summary["top_bridges"])[
+            ["name", "community", "betweenness", "total_count"]
+        ]
+        st.dataframe(
+            bridge_frame,
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "betweenness": st.column_config.NumberColumn(format="%.4f"),
+            },
+        )
+        st.caption("按 betweenness 排序。泛概念占比较高，见 P-052。")
 
 
 def page_early() -> None:
@@ -595,6 +681,7 @@ def main() -> None:
             "概念时间线",
             "生命周期类型",
             "早期预测",
+            "研究地图",
             "上升与替代",
             "替代复核",
             "趋势回测",
@@ -615,6 +702,8 @@ def main() -> None:
         page_lifecycle()
     elif page == "早期预测":
         page_early()
+    elif page == "研究地图":
+        page_map()
     elif page == "上升与替代":
         page_rising()
     elif page == "替代复核":

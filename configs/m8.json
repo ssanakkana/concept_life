@@ -1,0 +1,15 @@
+{
+  "analysis": {
+    "start_year": 1995,
+    "end_year": 2023
+  },
+  "graph": {
+    "top_concepts": 500,
+    "map_nodes": 300,
+    "min_support": 5,
+    "min_total_count": 50,
+    "louvain_resolution": 1.0,
+    "seed": 42,
+    "edges_per_node": 6
+  }
+}

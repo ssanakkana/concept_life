@@ -61,6 +61,22 @@ def load_early_metrics(path: Path | None = None) -> Any:
     return load_json(path or RUNS_DIR / "m7" / "early_metrics.json")
 
 
+def load_communities(path: Path | None = None) -> pd.DataFrame:
+    return load_csv(path or DATA_DIR / "communities.csv")
+
+
+def load_map_nodes(path: Path | None = None) -> pd.DataFrame:
+    return load_csv(path or DATA_DIR / "research_map_nodes.csv")
+
+
+def load_map_edges(path: Path | None = None) -> pd.DataFrame:
+    return load_csv(path or DATA_DIR / "research_map_edges.csv")
+
+
+def load_community_summary(path: Path | None = None) -> Any:
+    return load_json(path or RUNS_DIR / "m8" / "community_summary.json")
+
+
 def _normalize_label(value: object) -> int | None:
     if value is None:
         return None
@@ -179,7 +195,11 @@ def check_artifacts() -> list[Path]:
         DATA_DIR / "trend_predictions.csv",
         DATA_DIR / "lifecycle_clusters.csv",
         DATA_DIR / "early_predictions.csv",
+        DATA_DIR / "communities.csv",
+        DATA_DIR / "research_map_nodes.csv",
+        DATA_DIR / "research_map_edges.csv",
         RUNS_DIR / "m7" / "early_metrics.json",
+        RUNS_DIR / "m8" / "community_summary.json",
         LABELS_DIR / "replacement_review.csv",
         RUNS_DIR / "m1" / "report" / "year_histogram.csv",
         RUNS_DIR / "m1" / "report" / "summary.json",
