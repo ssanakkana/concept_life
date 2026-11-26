@@ -11,10 +11,10 @@
 | M0 | 从先导缓存到论文表、概念时间线、上升概念榜 | 已实现 |
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
-| M3 | 候选替代检测、趋势预测 | 未实现 |
+| M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
 | M4 | Streamlit demo、海报、讲稿 | 未实现 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M2 的代码，M3 和 M4 还没有，不要假设它们存在。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M3 的代码，M4 还没有，不要假设它存在。
 
 ## 环境
 
@@ -36,6 +36,7 @@ concept_life/
 │   ├── default.json          # M0 配置：缓存路径、年份、窗口、阈值
 │   ├── m1.json               # M1 配置：全量缓存、CS 领域过滤、停用词
 │   ├── m2.json               # M2 配置：分析区间和生命周期事件阈值
+│   ├── m3.json               # M3 配置：替代候选和趋势预测窗口
 │   ├── golden_cases.json     # 9 个黄金案例的期望年份范围
 │   └── queries.json          # 170 个抓取查询，分 seeds/classic/recent
 ├── docs/
@@ -51,6 +52,8 @@ concept_life/
 │   ├── crawl.py              # M1 Acemap 抓取，缓存、断点续抓、manifest
 │   ├── data_report.py        # M1 数据质量报告：年份、字段、层级、缺失
 │   ├── m2_events.py          # M2 生命周期事件，写 events.jsonl
+│   ├── m3_replacements.py    # M3 候选替代检测，写 replacements.jsonl
+│   ├── m3_trend.py           # M3 趋势预测回测，写 metrics 和预测表
 │   └── check_golden_cases.py # M2 黄金案例回归检查
 ├── src/
 │   └── concept_life/
@@ -60,12 +63,16 @@ concept_life/
 │       ├── ingest.py         # 读缓存、去重、写 JSONL
 │       ├── series.py         # 逐年计数、展示名
 │       ├── rising.py         # share 归一化的上升榜
-│       └── mine.py           # 基于 share 的生命周期事件规则
+│       ├── mine.py           # 基于 share 的生命周期事件规则
+│       ├── replace.py        # 共现、Jaccard、Pearson、候选替代
+│       └── predict.py        # 趋势特征、逻辑回归、precision@k、NDCG
 ├── tests/
 │   ├── test_schema.py        # 解析、层级过滤、top-k、领域过滤
 │   ├── test_ingest.py        # 停用词、空概念论文丢弃
 │   ├── test_temporal.py      # share 归一化、new 概念、最小计数
-│   └── test_mine.py          # 完整生命周期、休眠复活、短序列
+│   ├── test_mine.py          # 完整生命周期、休眠复活、短序列
+│   ├── test_replace.py       # Pearson、Jaccard、合成替代对
+│   └── test_predict.py       # 指标、未来信息不泄漏
 ├── data/
 │   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
 │   │   └── acemap/           # 抓取响应，文件名是查询哈希 + 页码
@@ -90,11 +97,16 @@ concept_life/
 | `crawl.py` | 按查询和页码抓 Acemap，缓存原始响应，写 manifest | 不解析、不做领域过滤 |
 | `data_report.py` | 读 `papers.jsonl`，输出年份、字段、层级、缺失统计 | 不做排名，不做图 |
 | `mine.py` | 按 share 规则检测出生、爆发、峰值、衰退、休眠、复活、死亡 | 不读文件，不写文件 |
+| `replace.py` | 共现支持度、Jaccard、Pearson、候选替代检测 | 不做因果判断，不自动下结论 |
+| `predict.py` | 趋势特征、相对/绝对标签、逻辑回归、precision@k、NDCG | 不做随机切分，不引入未来图 |
 | `m2_events.py` | 读 `concept_series.csv`，写 `events.jsonl` 和事件表 | 不做替代检测，不做趋势预测 |
+| `m3_replacements.py` | 读序列、事件、论文，写替代候选和人工复核表 | 不把候选当替代事实 |
+| `m3_trend.py` | 三窗口回测，写指标和预测表 | 不用未来共现边 |
 | `check_golden_cases.py` | 用 9 个黄金案例检查事件年份 | 不做历史考证，只做回归 |
 | `queries.json` | 170 个抓取查询，分 `seeds`、`classic`、`recent` | 不保证每个查询都有结果 |
 | `m1.json` | M1 覆盖配置：全量缓存、CS 过滤、停用词 | 不改变 `default.json` 的 M0 行为 |
 | `m2.json` | M2 分析区间和事件阈值 | 不改变 M1 的过滤行为 |
+| `m3.json` | M3 替代候选和趋势预测配置 | 不改变 M2 的事件规则 |
 | `golden_cases.json` | 黄金案例的期望年份范围 | 不保证现实发明年 |
 
 ## 数据流
@@ -256,6 +268,37 @@ python scripts/check_golden_cases.py
 
 死亡只有 3 个，因为 42,460 篇语料里概念很少完全消失。海报上写“在语料中消失”，不要把 death 当主结论，见 `D-012`。黄金案例的年份是语料相对年份，不是现实发明年，见 `D-013`。
 
+## M3 候选替代与趋势预测
+
+替代检测读序列、事件和论文表，输出候选对和人工复核表：
+
+```bash
+python scripts/m3_replacements.py
+```
+
+产物：
+
+- `data/processed/replacements.jsonl` 和 `replacements.csv`。
+- `runs/m3/replacement_summary.json`。
+- `runs/m3/replacement_review.csv`，`valid_1_0` 留空，等人填。
+
+本次结果：234 个衰退概念、523 个上升概念、52,349 个共现对、30 个候选对。前十里有 Machine translation→Transformer、Distributed learning→Federated learning 等合理对，也有 Pascal、Workload、Java 这种标签噪声。共现相似度偏向互补概念，RNN→Transformer 因为直接共现太少被漏掉，所以这是候选生成，不是自动替代。
+
+趋势预测读同样的数据，做三窗口回测：
+
+```bash
+python scripts/m3_trend.py
+```
+
+产物：
+
+- `runs/m3/trend_metrics.json`。
+- `data/processed/trend_predictions.csv`。
+
+任务定义：给定 T 年的特征，预测 T+1 到 T+2 的相对份额增长 top-k。每个窗口只用 T 年以前的共现图，避免未来泄漏。标签是相对增长，并要求未来份额至少 0.5%。候选要求 T 年份额至少 0.3%、累计至少 10 篇。
+
+本次结果：模型 precision@10 0.200、precision@20 0.150、nDCG@20 0.208；growth 基线 0.100、0.133、0.107；random 0.033、0.067、0.085。模型高于基线，但绝对精度不高，逐窗口方差大，概念标签噪声是主要误差源。
+
 ## 产物格式
 
 `data/processed/papers.jsonl` 每行一篇论文：
@@ -325,7 +368,7 @@ python scripts/check_golden_cases.py
 python -m unittest discover -s tests -v
 ```
 
-预期 15 个测试全部通过。测试覆盖：
+预期 20 个测试全部通过。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -336,6 +379,8 @@ python -m unittest discover -s tests -v
 - 完整生命周期：出生、爆发、峰值、衰退、死亡。
 - 休眠与复活，短序列跳过。
 - 来源字段和 Wikidata 提取。
+- Pearson、Jaccard、合成替代对。
+- precision@k、NDCG、趋势特征不读未来年份。
 
 ## 如何扩展
 
@@ -359,6 +404,9 @@ python -m unittest discover -s tests -v
 - “死亡”指在语料中连续两年没有活跃论文，不是现实中消失。本次只有 3 个死亡事件，海报和报告要用“在语料中消失”这种措辞，见 `D-012`。
 - 生命周期事件是规则驱动的，泛概念仍然会产生事件，比如 `Implementation`、`Citation`、`Path (computing)`。案例和海报只用黄金案例和人工挑过的概念，见 `P-029`。
 - 早期年份论文少，`min_year_total=100` 只让峰值和爆发在语料足够大的年份计算，见 `P-027`。
+- 替代检测是候选生成，不是自动替代。共现相似度偏向互补概念，RNN→Transformer 被漏掉，需要 citation 或文本信号，见 `P-031`、`I-005`。
+- 趋势预测的绝对精度不高，模型 precision@10 0.200，高于 growth 和 random 但远不到可靠预测。标签定义会改变结论，绝对增长下 frequency 基线很强，见 `D-014`。
+- 趋势特征一度用全语料共现图，泄漏未来信息；现在每个窗口只用 T 年以前的图，见 `P-030`、`D-016`。
 - 当前没有 demo。M4 才做，接口已经按“只读标准产物”设计。
 
 ## 文档索引

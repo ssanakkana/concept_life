@@ -27,6 +27,7 @@
 | W-20261126-02 | 2026-11-26 | 想法池与严格 README | 完成，61a0282 |
 | W-20261126-03 | 2026-11-26 | M1 抓取器、领域过滤、质量报告 | 完成，6d89786 |
 | W-20261126-04 | 2026-11-26 | M2 生命周期事件与黄金案例 | 完成，976f2cd |
+| W-20261126-05 | 2026-11-26 | M3 替代候选与趋势预测 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -201,6 +202,12 @@ top rising 前十：
 - 提交 M1 commit。
 - 进入 M2：先建黄金案例集，再做出生、爆发、峰值、衰退、复活、死亡的事件规则；分析区间按 `D-010` 用 1995-2023。
 
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户要求“现在是否有 milestone？如果有的话请先推进第一部分”；上一轮已确认 M0 完成、M1 是下一个里程碑。
+- 输出采纳/拒绝：采纳“先验证 API、再冒烟、再全量后台抓取”的顺序；没有直接上全量，避免接口问题浪费 30 分钟。
+
 **Commit**：6d89786
 
 ## W-20261126-04 · 2026-11-26 · 会话 01（续）
@@ -254,8 +261,59 @@ python -m unittest discover -s tests -v
 
 **Commit**：976f2cd
 
+## W-20261126-05 · 2026-11-26 · 会话 01（续）
+
+**目标**：推进 M3：候选替代检测和趋势预测。
+
+**做了什么**：
+
+- 新增 `src/concept_life/replace.py`：共现支持度、Jaccard、Pearson、候选替代检测。
+- 新增 `src/concept_life/predict.py`：趋势特征、相对/绝对标签、逻辑回归、precision@k、NDCG、三窗口回测。
+- 新增 `scripts/m3_replacements.py`、`scripts/m3_trend.py`、`configs/m3.json`。
+- 新增 `tests/test_replace.py`、`tests/test_predict.py`，测试从 15 个增加到 20 个。
+- 修复趋势预测的时间泄漏：每个窗口只用 T 年以前的共现图建 degree 和邻居。
+- `requirements.txt` 增加 numpy。
+
+**命令**：
+
+```bash
+python scripts/m3_replacements.py
+python scripts/m3_trend.py
+python -m unittest discover -s tests -v
+```
+
+**结果**：
+
+替代检测：
+
+- 234 个衰退概念，523 个上升概念，52,349 个共现对，30 个候选对。
+- 前十：Cryptocurrency→Blockchain、Pascal (unit)→Segmentation、Java→Source code、Machine translation→Language model、Machine translation→Transformer、Workload→Load balancing、Cryptocurrency→Smart contract、Mobile edge computing→Enhanced Data Rates for GSM Evolution、Distributed learning→Federated learning、Query language→SQL。
+- 人工 spot check：Machine translation→Transformer 和 Distributed learning→Federated learning 合理；Pascal、Workload、Java 是标签噪声。已知的 RNN→Transformer 没有被检出，因为两者直接共现太少。
+- `runs/m3/replacement_review.csv` 留了 `valid_1_0` 空列，等人填。
+
+趋势预测：
+
+- 窗口 2016、2018、2020，每窗 441 到 502 个候选，20 个正例。
+- 平均指标：模型 precision@10 0.200、precision@20 0.150、nDCG@20 0.208；growth 基线 0.100、0.133、0.107；random 0.033、0.067、0.085；frequency 0.000、0.017、0.011。
+- 2020 窗口的模型 top 20 里有 Code generation、Joint (building)、Closed captioning 等命中，也有大量概念标签噪声。
+- 模型在 precision 上高于 growth 和 random，但绝对值不高，逐窗口方差大。
+
+**踩坑**：
+
+- 趋势特征一度用全语料共现图算 degree 和邻居，泄漏了未来信息，precision@10 虚高到 0.467。改成每个窗口只用 T 年以前的图后，降到 0.200。这是 `D-016`。
+- 替代检测的共现相似度偏向互补概念，不是替代概念。RNN→Transformer 因为直接共现少被漏掉。真正做替代需要 citation 或文本信号，见 `I-005`。
+- 标签定义决定结论：绝对增长下 frequency 基线很强；相对增长加最小未来份额后，模型才有 lift。这是 `D-014`。
+- 概念级标签噪声仍是主要错误源，`P-025` 没有根治。
+
+**下一步**：
+
+- 更新 README、PLAN、PITFALLS、DECISIONS。
+- 提交 M3 commit。
+- M4：Streamlit demo、A1 海报、两分钟讲稿。
+- 如果时间富余，用 citation 或文本信号改进替代检测。
+
 **AI 交互**：
 
 - 工具/模型：Claude Code。
-- 关键提示：用户要求“现在是否有 milestone？如果有的话请先推进第一部分”；上一轮已确认 M0 完成、M1 是下一个里程碑。
-- 输出采纳/拒绝：采纳“先验证 API、再冒烟、再全量后台抓取”的顺序；没有直接上全量，避免接口问题浪费 30 分钟。
+- 关键提示：用户要求先推 M1 和 M2，再推进 M3。
+- 输出采纳/拒绝：采纳“替代候选加人工复核”和“相对增长标签加时间感知图”的方案；没有引入新数据源；承认替代检测的负结果，不把它包装成自动替代。

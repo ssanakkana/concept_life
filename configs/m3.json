@@ -1,0 +1,38 @@
+{
+  "analysis": {
+    "start_year": 1995,
+    "end_year": 2023
+  },
+  "replacement": {
+    "min_total_count": 20,
+    "min_support": 3,
+    "min_jaccard": 0.03,
+    "min_overlap_years": 5,
+    "min_late_growth": 0.002,
+    "max_old_last_ratio": 0.6,
+    "require_overtake": true,
+    "neighbor_top_k": 30,
+    "top_k_per_old": 20,
+    "max_candidates": 30
+  },
+  "trend": {
+    "windows": [
+      2016,
+      2018,
+      2020
+    ],
+    "horizon_years": 2,
+    "top_k": 20,
+    "label_mode": "relative",
+    "min_future_share": 0.005,
+    "eval_k": [
+      10,
+      20
+    ],
+    "min_total_count_T": 10,
+    "min_share_T": 0.003,
+    "l2": 0.01,
+    "lr": 0.05,
+    "epochs": 1200
+  }
+}

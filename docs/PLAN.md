@@ -81,10 +81,12 @@ M2 结果：1,793 个概念有事件，共 3,003 个事件。出生 1,793，爆�
 
 任务：
 
-- [ ] 替代检测
-- [ ] 趋势特征
-- [ ] 时间切分评估
-- [ ] 基线对比
+- [x] 替代检测，输出候选对和人工复核表
+- [x] 趋势特征
+- [x] 时间切分评估，每个窗口只用 T 年以前的图
+- [x] 基线对比，frequency、growth、random
+
+M3 结果：替代检测给出 30 个候选对，Machine translation→Transformer 和 Distributed learning→Federated learning 合理，但共现相似度偏向互补概念，需要人工复核。趋势预测在三窗口回测中模型 precision@10 0.200，growth 基线 0.100，random 0.033；绝对精度不高，概念标签噪声是主要误差源。
 
 ## M4 演示与展示
 
