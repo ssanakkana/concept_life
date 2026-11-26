@@ -101,8 +101,10 @@ M3 结果：替代检测给出 30 个候选对，Machine translation→Transform
 
 任务：
 
-- [ ] demo
+- [x] demo，五个页面，uv 环境，AppTest 冒烟 0 异常
 - [ ] 海报
 - [ ] 讲稿
 - [ ] AI 使用说明
 - [ ] 提交材料
+
+M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_life/app.py` 启动。五个页面是总览、概念时间线、上升与替代、趋势回测、数据与方法。`uv run python scripts/smoke_demo.py` 全部 0 异常。海报和两分钟讲稿还没做。

@@ -35,12 +35,21 @@
 ## 4. 常用命令
 
 ```bash
+# 同步 uv 环境，创建 .venv
+uv sync
+
 # M0：用 kg_search 的缓存跑通论文到概念时间线，不需要网络
-python scripts/m0_from_cache.py
+uv run python scripts/m0_from_cache.py
 
 # 测试
-python -m unittest discover -s tests -v
+uv run python -m unittest discover -s tests -v
+
+# M4 demo
+uv run streamlit run src/concept_life/app.py
+uv run python scripts/smoke_demo.py
 ```
+
+依赖只写在 `pyproject.toml`，用 `uv add` 或手动加完再 `uv lock`。不要手动改 `.venv`，也不要把 `.venv` 提交进 git。
 
 后续阶段的命令写进 `README.md`，不要散落在聊天记录里。
 
@@ -108,6 +117,8 @@ python -m unittest discover -s tests -v
 - 不把 `cited_by_count` 当成历史时间序列。它是当前值，不是当年的引用数。
 - 不把共现当成因果关系，不把“候选替代”说成“替代”。
 - 不引入新数据源而不写 DECISIONS。
+- 不把 `.venv`、缓存、`data/`、`runs/` 提交进 git。
+- 不在没跑 `uv run python scripts/smoke_demo.py` 的情况下声称 demo 可用。
 
 ## 10. 完成定义
 

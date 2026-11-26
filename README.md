@@ -12,16 +12,22 @@
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
 | M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
-| M4 | Streamlit demo、海报、讲稿 | 未实现 |
+| M4 | Streamlit demo、海报、讲稿 | demo 已实现，5 页 smoke test 通过；海报和讲稿未做 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M3 的代码，M4 还没有，不要假设它存在。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M3 和 demo，海报和讲稿还没有。
 
 ## 环境
 
-- Python 3.10 及以上。代码用了 `int | None` 这种类型标注。
-- M0 只用 Python 标准库，不需要 `pip install`。
-- M1 抓取需要 `requests`，已经写在 `requirements.txt` 里。
-- M2 之后的 `networkx`、`streamlit`、`matplotlib`、`pandas` 仍按需安装，当前是注释状态。
+- Python 3.10 及以上。
+- 推荐用 uv 管理本地环境：
+
+```bash
+uv sync
+```
+
+`uv sync` 会创建 `.venv` 并安装 `pyproject.toml` 里的依赖，`uv.lock` 锁定版本。所有命令都可以写成 `uv run python ...` 或 `uv run streamlit ...`。
+- `requirements.txt` 是 pip 兼容清单，给不用 uv 的环境。
+- M0 只用标准库；M1 需要 `requests`；M2 需要 `numpy`；M4 demo 需要 `streamlit`、`pandas`、`altair`。
 
 ## 仓库结构
 
@@ -30,8 +36,10 @@ concept_life/
 ├── AGENTS.md                 # AI 协作规范，唯一事实来源
 ├── CLAUDE.md                 # Claude Code 的入口，指向 AGENTS.md
 ├── README.md                 # 本文件：结构、复现、产物格式
-├── requirements.txt          # 依赖，M0 不需要
-├── .gitignore                # 忽略数据、运行产物、缓存
+├── pyproject.toml            # uv 依赖清单，demo 和脚本共用
+├── uv.lock                   # uv 锁定版本
+├── requirements.txt          # pip 兼容清单
+├── .gitignore                # 忽略数据、运行产物、缓存、.venv
 ├── configs/
 │   ├── default.json          # M0 配置：缓存路径、年份、窗口、阈值
 │   ├── m1.json               # M1 配置：全量缓存、CS 领域过滤、停用词
@@ -54,6 +62,7 @@ concept_life/
 │   ├── m2_events.py          # M2 生命周期事件，写 events.jsonl
 │   ├── m3_replacements.py    # M3 候选替代检测，写 replacements.jsonl
 │   ├── m3_trend.py           # M3 趋势预测回测，写 metrics 和预测表
+│   ├── smoke_demo.py         # M4 五个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
 ├── src/
 │   └── concept_life/
@@ -65,14 +74,17 @@ concept_life/
 │       ├── rising.py         # share 归一化的上升榜
 │       ├── mine.py           # 基于 share 的生命周期事件规则
 │       ├── replace.py        # 共现、Jaccard、Pearson、候选替代
-│       └── predict.py        # 趋势特征、逻辑回归、precision@k、NDCG
+│       ├── predict.py        # 趋势特征、逻辑回归、precision@k、NDCG
+│       ├── dashboard.py      # demo 的只读数据加载
+│       └── app.py            # Streamlit 五页界面
 ├── tests/
 │   ├── test_schema.py        # 解析、层级过滤、top-k、领域过滤
 │   ├── test_ingest.py        # 停用词、空概念论文丢弃
 │   ├── test_temporal.py      # share 归一化、new 概念、最小计数
 │   ├── test_mine.py          # 完整生命周期、休眠复活、短序列
 │   ├── test_replace.py       # Pearson、Jaccard、合成替代对
-│   └── test_predict.py       # 指标、未来信息不泄漏
+│   ├── test_predict.py       # 指标、未来信息不泄漏
+│   └── test_dashboard.py     # 时间线补年、概念排序、事件统计
 ├── data/
 │   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
 │   │   └── acemap/           # 抓取响应，文件名是查询哈希 + 页码
@@ -108,6 +120,9 @@ concept_life/
 | `m2.json` | M2 分析区间和事件阈值 | 不改变 M1 的过滤行为 |
 | `m3.json` | M3 替代候选和趋势预测配置 | 不改变 M2 的事件规则 |
 | `golden_cases.json` | 黄金案例的期望年份范围 | 不保证现实发明年 |
+| `dashboard.py` | demo 的只读数据加载和 DataFrame 变换 | 不写数据，不调 API |
+| `app.py` | Streamlit 五页界面 | 不做计算，只展示标准产物 |
+| `smoke_demo.py` | 用 AppTest 执行五个页面 | 不做视觉回归 |
 
 ## 数据流
 
@@ -159,7 +174,7 @@ ls ../kg_search/cache | head
 在 `concept_life` 目录下运行：
 
 ```bash
-python scripts/m0_from_cache.py
+uv run python scripts/m0_from_cache.py
 ```
 
 预期输出：
@@ -184,13 +199,13 @@ top rising:
 ```bash
 # Bash
 rm -rf data/processed runs/m0
-python scripts/m0_from_cache.py
+uv run python scripts/m0_from_cache.py
 ```
 
 ```powershell
 # PowerShell
 Remove-Item -Recurse -Force data\processed, runs\m0
-python scripts/m0_from_cache.py
+uv run python scripts/m0_from_cache.py
 ```
 
 M0 不发起网络请求。断网也能跑。
@@ -206,7 +221,7 @@ pip install -r requirements.txt
 抓取 170 个查询，每个查询 4 页，每页 100 条：
 
 ```bash
-python scripts/crawl.py --pages 4 --size 100
+uv run python scripts/crawl.py --pages 4 --size 100
 ```
 
 产物：
@@ -218,14 +233,14 @@ python scripts/crawl.py --pages 4 --size 100
 断点续抓：直接重跑同一条命令，已有文件会跳过。只想检查缓存覆盖：
 
 ```bash
-python scripts/crawl.py --offline --pages 4 --size 100
+uv run python scripts/crawl.py --offline --pages 4 --size 100
 ```
 
 抓完用 M1 配置重跑 M0，再做质量报告：
 
 ```bash
-python scripts/m0_from_cache.py --config configs/m1.json --runs runs/m1
-python scripts/data_report.py --papers data/processed/papers.jsonl --config configs/m1.json
+uv run python scripts/m0_from_cache.py --config configs/m1.json --runs runs/m1
+uv run python scripts/data_report.py --papers data/processed/papers.jsonl --config configs/m1.json
 ```
 
 `configs/m1.json` 做三件事：把缓存目录指向 `data/raw/acemap`，只保留 `topics` 里含 `computer science` 的论文，丢掉 `Field (mathematics)`、`Key (lock)` 这类歧义概念。没有 `topics` 的论文默认保留，数量会写进报告。
@@ -244,8 +259,8 @@ python scripts/data_report.py --papers data/processed/papers.jsonl --config conf
 M2 读 `data/processed/concept_series.csv`，给每个概念打生命周期事件。分析区间 1995 到 2023，所有阈值在 `configs/m2.json`。
 
 ```bash
-python scripts/m2_events.py --config configs/m2.json
-python scripts/check_golden_cases.py
+uv run python scripts/m2_events.py --config configs/m2.json
+uv run python scripts/check_golden_cases.py
 ```
 
 产物：
@@ -273,7 +288,7 @@ python scripts/check_golden_cases.py
 替代检测读序列、事件和论文表，输出候选对和人工复核表：
 
 ```bash
-python scripts/m3_replacements.py
+uv run python scripts/m3_replacements.py
 ```
 
 产物：
@@ -287,7 +302,7 @@ python scripts/m3_replacements.py
 趋势预测读同样的数据，做三窗口回测：
 
 ```bash
-python scripts/m3_trend.py
+uv run python scripts/m3_trend.py
 ```
 
 产物：
@@ -298,6 +313,38 @@ python scripts/m3_trend.py
 任务定义：给定 T 年的特征，预测 T+1 到 T+2 的相对份额增长 top-k。每个窗口只用 T 年以前的共现图，避免未来泄漏。标签是相对增长，并要求未来份额至少 0.5%。候选要求 T 年份额至少 0.3%、累计至少 10 篇。
 
 本次结果：模型 precision@10 0.200、precision@20 0.150、nDCG@20 0.208；growth 基线 0.100、0.133、0.107；random 0.033、0.067、0.085。模型高于基线，但绝对精度不高，逐窗口方差大，概念标签噪声是主要误差源。
+
+## M4 Streamlit Demo
+
+先同步环境：
+
+```bash
+uv sync
+```
+
+启动 demo：
+
+```bash
+uv run streamlit run src/concept_life/app.py
+```
+
+浏览器打开 `http://localhost:8501`。demo 只读预计算产物，不调用 API，断网可用。
+
+五个页面：
+
+- 总览：42,460 篇论文、10,957 个概念、3,003 个事件、30 个替代候选；年份直方图和事件分布。
+- 概念时间线：选择概念，看 share 曲线和事件虚线，下面是事件表和证据。
+- 上升与替代：上升榜、候选替代表、人工复核表。
+- 趋势回测：模型和三条基线的指标，2020 窗口的预测表。
+- 数据与方法：数据来源、方法、局限。
+
+冒烟测试：
+
+```bash
+uv run python scripts/smoke_demo.py
+```
+
+预期五个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
 
 ## 产物格式
 
@@ -365,10 +412,10 @@ python scripts/m3_trend.py
 ## 测试
 
 ```bash
-python -m unittest discover -s tests -v
+uv run python -m unittest discover -s tests -v
 ```
 
-预期 20 个测试全部通过。测试覆盖：
+`uv run python -m unittest discover -s tests -v` 预期 23 个测试全部通过。直接用系统 Python 跑时，3 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -381,6 +428,7 @@ python -m unittest discover -s tests -v
 - 来源字段和 Wikidata 提取。
 - Pearson、Jaccard、合成替代对。
 - precision@k、NDCG、趋势特征不读未来年份。
+- 时间线补年、概念按总量排序、事件统计。
 
 ## 如何扩展
 

@@ -37,3 +37,6 @@
 | P-031 | 替代检测的 top 对很多是互补概念，不是替代概念，RNN→Transformer 反而被漏掉 | 共现相似度衡量“经常一起出现”，替代关系往往是“同一生态位、互斥出现” | 把输出叫候选对，加人工复核表；真正的替代需要 citation 或文本信号，见 `I-005` | `replace.py`、`D-015` |
 | P-032 | 绝对增长标签下 frequency 基线很强，模型没有增量 | 绝对份额增长偏向已经很大的概念 | 改成相对增长标签，并加最小未来份额和 T 年份额门槛；同时报告绝对模式作为对比，见 `D-014` | `predict.py`、`configs/m3.json` |
 | P-033 | random 和 frequency 基线在某些窗口是 0.000，看起来像 bug | 每窗只有 20 个正例，候选有几百个，随机 top-10 命中 0 个是正常的 | 报告每窗候选数、正例数和均值，不要只看单窗 0.000 就下结论 | `predict.py`、`runs/m3/trend_metrics.json` |
+| P-034 | Streamlit 1.67 警告 `use_container_width` 将在 2025-12-31 后移除 | 新版 API 改成 `width="stretch"` 或 `width="content"` | 全部换成 `width="stretch"`，不再用 `use_container_width` | `app.py` |
+| P-035 | 只检查 `_stcore/health` 返回 ok，页面仍可能有异常 | health 只说明服务器起来了，不执行页面代码 | 用 `streamlit.testing.v1.AppTest` 真正跑五个页面，断言 exception 为空 | `scripts/smoke_demo.py` |
+| P-036 | pandas 读带 BOM 的 CSV，第一列变成 `﻿concept_id` | CSV 用了 `utf-8-sig` 写入 | 读的时候也写 `encoding="utf-8-sig"` | `dashboard.py` |

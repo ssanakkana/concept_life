@@ -1,7 +1,7 @@
-# M0 只用 Python 标准库；M1 抓取需要 requests。
-requests>=2.31       # 抓取 Acemap / OpenAlex
-numpy>=1.26          # 趋势预测的数值计算（M3）
-# networkx>=3.2        # 共现图、Louvain、链路预测（扩展）
-# streamlit>=1.30      # 演示界面（M4）
-# matplotlib>=3.8      # 静态图（M4）
-# pandas>=2.0          # 表格处理（可选）
+# uv 是主环境，优先使用 `uv sync` 和 `uv run`。
+# 这个文件保留给只用 pip 的环境。
+requests>=2.31
+numpy>=1.26
+pandas>=2.0
+streamlit>=1.30
+altair>=5.0

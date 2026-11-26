@@ -161,3 +161,23 @@
 **备选**：用全图加边的首次出现年份做过滤；用动态图模型。
 
 **后果**：precision@10 从 0.467 降到 0.200，但这是可信的数字。任何时序特征都必须按这个规则检查。
+
+## D-017 uv 作为主环境，pyproject 和 uv.lock 进 git
+
+**背景**：M4 需要 streamlit、pandas、altair，系统 Python 里没有；手动 pip 安装不可复现。
+
+**决定**：用 uv 管理环境。`pyproject.toml` 写依赖，`uv sync` 创建 `.venv` 和 `uv.lock`，所有命令用 `uv run` 前缀。`.venv` 进 `.gitignore`，`uv.lock` 进 git。`requirements.txt` 保留为 pip 兼容清单。
+
+**备选**：conda、pip + venv、全局安装。
+
+**后果**：环境可复现，新机器一条 `uv sync` 就能跑。新增依赖要写进 `pyproject.toml` 并重新 lock。
+
+## D-018 demo 只读预计算产物，不调用 API
+
+**背景**：Poster Session 现场网络不可控，实时调 Acemap 或 LLM 会翻车。
+
+**决定**：`app.py` 只读 `data/processed/` 和 `runs/` 里的标准产物，不发起任何网络请求。五个页面是总览、概念时间线、上升与替代、趋势回测、数据与方法。演示前用 `AppTest` 冒烟。
+
+**备选**：实时搜索、实时生成摘要、接 LLM。
+
+**后果**：demo 稳定、离线可用，但展示的是预计算结果，不是实时系统。海报上要写清楚这一点。

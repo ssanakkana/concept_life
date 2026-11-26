@@ -28,6 +28,7 @@
 | W-20261126-03 | 2026-11-26 | M1 抓取器、领域过滤、质量报告 | 完成，6d89786 |
 | W-20261126-04 | 2026-11-26 | M2 生命周期事件与黄金案例 | 完成，976f2cd |
 | W-20261126-05 | 2026-11-26 | M3 替代候选与趋势预测 | 完成，a568409 |
+| W-20261126-06 | 2026-11-26 | M4 Streamlit demo 与 uv 环境 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -319,3 +320,51 @@ python -m unittest discover -s tests -v
 - 输出采纳/拒绝：采纳“替代候选加人工复核”和“相对增长标签加时间感知图”的方案；没有引入新数据源；承认替代检测的负结果，不把它包装成自动替代。
 
 **Commit**：a568409
+
+## W-20261126-06 · 2026-11-26 · 会话 01（续）
+
+**目标**：推进 M4：用 uv 管理环境，做 Streamlit demo 骨架，跑通五个页面。
+
+**做了什么**：
+
+- 新增 `pyproject.toml` 和 `uv.lock`，用 `uv sync` 创建 `.venv`，安装 streamlit、pandas、altair、numpy、requests。
+- 新增 `src/concept_life/dashboard.py`：只读数据加载和 DataFrame 变换。
+- 新增 `src/concept_life/app.py`：五个页面，总览、概念时间线、上升与替代、趋势回测、数据与方法。
+- 新增 `scripts/smoke_demo.py`：用 `streamlit.testing.v1.AppTest` 执行五个页面。
+- 新增 `tests/test_dashboard.py`：时间线补年、概念排序、事件统计，测试从 20 个增加到 23 个。
+- `requirements.txt` 改为 pip 兼容清单，uv 成为主环境。
+- `use_container_width` 全部换成 `width="stretch"`，消除 Streamlit 1.67 的弃用警告。
+
+**命令**：
+
+```bash
+uv sync
+uv run streamlit run src/concept_life/app.py
+uv run python scripts/smoke_demo.py
+uv run python -m unittest discover -s tests -v
+```
+
+**结果**：
+
+- uv 0.8.14，Python 3.13.15，streamlit 1.67.0，pandas 3.1.1，numpy 2.4.6。
+- 五个页面全部 0 异常。
+- 23 个测试通过；直接用系统 Python 跑时，3 个 dashboard 测试 skip，因为 pandas 只在 uv 环境里。
+- demo 只读预计算产物，不调用 API，断网可用。
+
+**踩坑**：
+
+- Streamlit 1.67 提示 `use_container_width` 将在 2025-12-31 后移除，改用 `width="stretch"`。
+- 只检查 `http://localhost:8501/_stcore/health` 不能证明页面能跑，必须用 `AppTest` 真正执行页面代码。
+- pandas 读带 BOM 的 CSV 时，`encoding="utf-8-sig"` 才不会把第一列读成 `﻿...`。
+
+**下一步**：
+
+- 做 A1 海报和两分钟讲稿。
+- 把 demo 的截图或 GIF 放进 Canvas 讨论帖。
+- 提交 M4 commit。
+
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户同意推进 M4，并问能不能用 uv 管理本地虚拟环境。
+- 输出采纳/拒绝：采纳 uv + `pyproject.toml` + `uv.lock` 作为主环境；demo 先做五页骨架，不做实时 API 和图数据库。

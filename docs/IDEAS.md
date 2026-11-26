@@ -20,7 +20,7 @@
 
 | ID | 想法 | DM 任务 | 新数据 | 成本 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| I-001 | 概念演化卡片与时间线 | 展示层，复用事件表 | 无 | 0.5 天 | P1 | backlog |
+| I-001 | 概念演化卡片与时间线 | 展示层，复用事件表 | 无 | 0.5 天 | P1 | done |
 | I-002 | 趋势预测：下一阶段上升概念 | 时序排序/分类 | 无 | 1 天 | P0 | done |
 | I-003 | 生命周期聚类与早期预测 | 聚类 + 分类 | 无 | 1 天 | P1 | backlog |
 | I-004 | 候选替代检测 | 时序相关 + 语义相似度 | 无 | 1 天 | P0 | done（候选生成） |
@@ -38,7 +38,7 @@
 
 P0 是核心，先做；P1 是强加分；P2 是锦上添花；P3 只有时间富余才做。
 
-已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`。I-004 只是候选生成，人工复核表在 `runs/m3/replacement_review.csv`。
+已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`。I-004 只是候选生成，人工复核表在 `runs/m3/replacement_review.csv`。I-012 交互式研究地图还没有做，demo 目前是时间线和表格，不是节点图。
 
 ## I-001 概念演化卡片与时间线
 
