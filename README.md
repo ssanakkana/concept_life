@@ -65,7 +65,9 @@ concept_life/
 ├── experiments/
 │   ├── README.md             # 交互地图原型说明
 │   ├── d3.v7.min.js          # 本地 D3，离线可用
-│   └── map_interactive.html  # 生成物，git 忽略
+│   ├── map_interactive.html  # 本地开发版，git 忽略
+│   ├── map_standalone.html   # 单文件版，进 git，可直接分发
+│   └── map_artifact.html     # Artifact 版，git 忽略
 ├── scripts/
 │   ├── m0_from_cache.py      # M0 命令行入口
 │   ├── crawl.py              # M1 Acemap 抓取，缓存、断点续抓、manifest
@@ -77,6 +79,8 @@ concept_life/
 │   ├── m7_early.py           # M7 早期预测，写 metrics 和预测表
 │   ├── m8_map.py             # M8 共现图、Louvain、桥接概念、地图产物
 │   ├── build_map_html.py     # 交互地图原型的 HTML 生成器
+│   ├── build_map_standalone.py # 单文件版生成器，内联 D3
+│   ├── build_map_artifact.py # Artifact 版生成器，D3 走 CDN
 │   ├── evaluate_replacements.py # M6 从人工标签算 precision@k
 │   ├── smoke_demo.py         # M4 七个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
@@ -152,6 +156,8 @@ concept_life/
 | `m8_map.py` | 建共现图、跑社区、裁剪地图、写节点和边 | 不画全图，只画 top 300 |
 | `m8.json` | M8 图规模、边阈值、Louvain 分辨率 | 不改变 M3 的替代候选 |
 | `build_map_html.py` | 生成独立交互地图 HTML | 不接 Streamlit，不写数据 |
+| `build_map_standalone.py` | 把 D3 内联，生成单文件版 | 不重新计算图 |
+| `build_map_artifact.py` | 生成 Artifact 版，D3 走 CDN | 不发布 Artifact |
 | `dashboard.py` | demo 的只读数据加载、复核标签合并和 precision 计算 | 不写原始数据，不调 API |
 | `app.py` | Streamlit 七页界面，含替代复核和保存 | 不做模型训练 |
 | `evaluate_replacements.py` | 从 `replacement_review.csv` 算 precision@10/20 | 不替人做判断 |
@@ -448,7 +454,7 @@ uv run python scripts/m8_map.py
 
 地图只画 top 300 节点和每个节点最强的 6 条边，避免糊成一团。Louvain 固定 seed=42，社区编号按大小和最小节点 id 排序，换 seed 会变。
 
-交互原型在 `experiments/map_interactive.html`，由 `scripts/build_map_html.py` 生成。它用本地 D3 做力导向布局，支持拖动、缩放、点击节点聚焦、点击空白退出。还没接进 Streamlit demo，确认后再替换研究地图页。
+交互原型在 `experiments/map_interactive.html`，由 `scripts/build_map_html.py` 生成。它用本地 D3 做力导向布局，支持拖动、缩放、点击节点聚焦、点击空白退出。聚焦时图例隐藏，视野自动平移到“节点 + 邻居”的包围盒。单文件版 `experiments/map_standalone.html` 把 D3 内联，进 git，下载后双击即可。还没接进 Streamlit demo，确认后再替换研究地图页。
 
 ## 产物格式
 

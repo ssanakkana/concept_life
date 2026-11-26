@@ -154,6 +154,7 @@ TEMPLATE = r"""<!doctype html>
     stroke: rgba(255, 255, 255, 0.9);
     stroke-width: 2.5px;
   }
+  #legend[hidden] { display: none !important; }
   #legend {
     position: absolute;
     top: 14px;
@@ -358,6 +359,8 @@ let focusedId = null;
 let neighborWeight = new Map();
 let maxWeight = 1;
 let showAllLabels = false;
+let previousTransform = d3.zoomIdentity;
+let focusToken = 0;
 
 function endpointId(value) {
   return typeof value === "object" ? value.id : value;
@@ -377,8 +380,29 @@ function focusForce(alpha) {
   });
 }
 
+function focusViewport(d) {
+  const members = nodes.filter(n => n.id === d.id || neighborWeight.has(n.id));
+  if (!members.length) return;
+  const xs = members.map(n => n.x);
+  const ys = members.map(n => n.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const spanX = Math.max(120, maxX - minX);
+  const spanY = Math.max(120, maxY - minY);
+  const scale = Math.max(0.8, Math.min(2.0, 0.72 * Math.min(width / spanX, height / spanY)));
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const transform = d3.zoomIdentity
+    .translate(width / 2 - scale * cx, height / 2 - scale * cy)
+    .scale(scale);
+  svg.transition().duration(650).call(zoom.transform, transform);
+}
+
 function focusNode(d) {
   if (focusedId === d.id) { resetFocus(); return; }
+  if (!focusedId) previousTransform = d3.zoomTransform(svg.node());
   focusedId = d.id;
   neighborWeight = new Map();
   maxWeight = 1;
@@ -439,11 +463,18 @@ function focusNode(d) {
   badge.textContent =
     `聚焦：${d.name} · 社区 ${d.community} · ${neighborWeight.size} 个直接邻居`;
   simulation.alpha(0.4).restart();
+  document.getElementById("legend").hidden = true;
+  const token = ++focusToken;
+  setTimeout(() => {
+    if (token === focusToken && focusedId === d.id) focusViewport(d);
+  }, 650);
 }
 
 function resetFocus() {
+  focusToken++;
   focusedId = null;
   neighborWeight = new Map();
+  document.getElementById("legend").hidden = false;
   node.select("circle").transition().duration(420)
     .attr("r", baseR)
     .attr("opacity", 1)
@@ -460,6 +491,7 @@ function resetFocus() {
     .attr("stroke-width", d => Math.min(2.4, 0.25 + Math.sqrt(d.support) / 7));
   simulation.force("focus", null);
   document.getElementById("focus-label").style.display = "none";
+  svg.transition().duration(650).call(zoom.transform, previousTransform);
   simulation.alpha(0.2).restart();
 }
 
@@ -489,7 +521,11 @@ function hideTooltip() {
 }
 
 document.getElementById("reset-view").addEventListener("click", () => {
-  svg.transition().duration(650).call(zoom.transform, d3.zoomIdentity);
+  if (focusedId) {
+    resetFocus();
+  } else {
+    svg.transition().duration(650).call(zoom.transform, d3.zoomIdentity);
+  }
 });
 document.getElementById("reheat").addEventListener("click", () => {
   simulation.alpha(1).restart();

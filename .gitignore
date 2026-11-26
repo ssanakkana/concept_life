@@ -13,6 +13,7 @@ experiments/map_interactive.html
 experiments/map_artifact.html
 experiments/map_preview*.png
 experiments/map_artifact*.png
+experiments/map_standalone*.png
 experiments/_map_check.js
 .DS_Store
 Thumbs.db

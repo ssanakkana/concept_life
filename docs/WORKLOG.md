@@ -36,6 +36,7 @@
 | W-20261126-11 | 2026-11-26 | M7 生命周期早期预测 | 完成，0870a86 |
 | W-20261126-12 | 2026-11-26 | M8 社区发现与研究地图 | 完成，54855e6 |
 | W-20261127-01 | 2026-11-27 | 研究地图交互原型 | 完成，0c59186 |
+| W-20261127-02 | 2026-11-27 | 聚焦视野、单文件版与上传 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -712,3 +713,47 @@ uv run python scripts/build_map_html.py
 - 输出采纳/拒绝：采纳“独立 HTML 原型 + 本地 D3 + 力导向 + 点击聚焦”的方案；没有直接改 Streamlit demo。
 
 **Commit**：0c59186
+
+## W-20261127-02 · 2026-11-27 · 会话 02（续）
+
+**目标**：修复聚焦节点被图例挡住的问题，生成单文件版，推仓库。
+
+**做了什么**：
+
+- 发现 Transformer 在图上 x=0.82，聚焦时被右侧图例覆盖。
+- 聚焦时隐藏图例，自动把视野平移到“节点 + 邻居”的包围盒；点击空白恢复原视野和图例。
+- 新增 `scripts/build_map_standalone.py`，把 D3 内联，生成 `experiments/map_standalone.html`，442KB，双击即可打开。
+- 新增 `scripts/build_map_artifact.py`，生成 Artifact 版；Artifact 发布会话认证被 `ANTHROPIC_AUTH_TOKEN` 挡住，没有重试。
+- 用 headless Edge 重新截图，确认 Transformer 聚焦后居中、9 个邻居可见、图例隐藏。
+- 仓库推送 `7e531b6..91df532`。
+
+**命令**：
+
+```bash
+uv run python scripts/build_map_html.py
+uv run python scripts/build_map_standalone.py
+uv run python scripts/build_map_artifact.py
+```
+
+**结果**：
+
+- 聚焦 Transformer 时，视野自动居中，节点和 9 个邻居放大，其他节点压暗，图例隐藏。
+- 点击空白恢复原视野和图例。
+- 单文件版 442KB，D3 内联，不依赖网络。
+- Artifact 版已生成，但当前会话不能发布。
+
+**踩坑**：
+
+- 聚焦节点可能靠近图例或被图例覆盖，只放大不够；必须隐藏图例并自动平移。
+- 单文件版内嵌 300 节点数据，数据更新后要重新生成；这个文件是有意提交的分享版。
+- Artifact 发布需要 claude.ai 登录；当前 token 会一直拒绝，不能重试。
+
+**下一步**：
+
+- 用户确认交互后，决定是否接进 Streamlit 研究地图页。
+- 最后做海报和两分钟讲稿。
+
+**AI 交互**：
+
+- 关键提示：用户说“帮我上传一下吧”。
+- 输出采纳/拒绝：仓库已推送；Artifact 不能发布，改为生成单文件版并提交，给用户一个可直接分发的 HTML。

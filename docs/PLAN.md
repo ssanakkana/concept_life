@@ -190,7 +190,8 @@ M7 结果：1,333 个概念。同分布 5 折 accuracy 0.656 ± 0.022，macro-F1
 - [x] 地图布局和 demo 页
 - [x] 测试
 - [x] 交互地图原型：`experiments/map_interactive.html`，未接入 demo
+- [x] 单文件版：`experiments/map_standalone.html`，D3 内联，可直接分发
 
 M8 结果：500 个节点、17,661 条边、8 个社区，modularity 0.328；地图 300 个节点、1,537 条边。桥接榜前面是 Set (abstract data type)、Process (computing)、Artificial neural network、Scalability 等，很多是泛概念，见 `P-052`、`D-025`。
 
-交互原型支持力导向布局、拖动、缩放、点击节点聚焦、点击空白退出。截图验证了初始布局和 Transformer 聚焦效果；还没接进 Streamlit。
+交互原型支持力导向布局、拖动、缩放、点击节点聚焦、点击空白退出。聚焦时图例隐藏，视野自动平移到“节点 + 邻居”的包围盒；点击空白恢复原视野。单文件版把 D3 内联，442KB，下载后双击即可。截图验证了初始布局和 Transformer 聚焦效果；还没接进 Streamlit。

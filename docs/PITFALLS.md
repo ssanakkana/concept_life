@@ -58,3 +58,5 @@
 | P-052 | 桥接榜前面全是 `Set`、`Process`、`Benchmark` 这种泛概念 | betweenness 偏向 hub；概念标签本身有噪声 | 写清“桥接概念”是候选，不是真正的跨领域桥梁；地图页和海报都要说明 | `m8_map.py`、`app.py`、`D-025` |
 | P-053 | 力导向图一打开还是偏密，中心标签重叠 | 300 节点、1,537 条边，初始全画会糊 | 边更淡、初始只显示 top 9 标签；聚焦模式放大节点和邻居、压暗其他节点 | `build_map_html.py`、`experiments/README.md` |
 | P-054 | 生成的交互 HTML 内嵌了 300 个节点数据 | 生成物包含 `data/processed` 的内容，不适合进 git | 只提交生成器和本地 D3；HTML 和截图 gitignore，随时可重建 | `.gitignore`、`scripts/build_map_html.py` |
+| P-055 | 点击节点后聚焦效果看不见，节点被右侧图例挡住 | 节点位置靠近右边缘，图例是绝对定位覆盖层 | 聚焦时隐藏图例，并自动把“节点 + 邻居”的包围盒平移到视野中央；点击空白恢复 | `build_map_html.py`、`experiments/README.md` |
+| P-056 | `map_standalone.html` 内嵌 300 节点数据，数据更新后文件会过期 | 单文件版是有意提交的分享版，不是普通生成物 | 数据或图更新后重新跑 `build_map_html.py` 和 `build_map_standalone.py`，再提交单文件版 | `scripts/build_map_standalone.py`、`experiments/README.md` |
