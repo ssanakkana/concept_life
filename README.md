@@ -8,19 +8,20 @@
 
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
-| M0 | 从先导缓存到论文表、概念时间线、上升概念榜 | 已实现，7 个测试通过 |
-| M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 未实现，见 `docs/PLAN.md` |
+| M0 | 从先导缓存到论文表、概念时间线、上升概念榜 | 已实现 |
+| M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 未实现 |
 | M3 | 候选替代检测、趋势预测 | 未实现 |
 | M4 | Streamlit demo、海报、讲稿 | 未实现 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库只有 M0 的代码，不要假设 M1 到 M4 已经存在。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 和 M1 的代码，M2 到 M4 还没有，不要假设它们存在。
 
 ## 环境
 
 - Python 3.10 及以上。代码用了 `int | None` 这种类型标注。
 - M0 只用 Python 标准库，不需要 `pip install`。
-- M1 之后按需安装 `requests`、`networkx`、`streamlit`、`matplotlib`、`pandas`，见 `requirements.txt`（当前全部注释）。
+- M1 抓取需要 `requests`，已经写在 `requirements.txt` 里。
+- M2 之后的 `networkx`、`streamlit`、`matplotlib`、`pandas` 仍按需安装，当前是注释状态。
 
 ## 仓库结构
 
@@ -32,7 +33,9 @@ concept_life/
 ├── requirements.txt          # 依赖，M0 不需要
 ├── .gitignore                # 忽略数据、运行产物、缓存
 ├── configs/
-│   └── default.json          # M0 配置：缓存路径、年份、窗口、阈值
+│   ├── default.json          # M0 配置：缓存路径、年份、窗口、阈值
+│   ├── m1.json               # M1 配置：全量缓存、CS 领域过滤、停用词
+│   └── queries.json          # 170 个抓取查询，分 seeds/classic/recent
 ├── docs/
 │   ├── PLAN.md               # M0 到 M4 的阶段、任务、验收标准
 │   ├── WORKLOG.md            # 每次工作做了什么、结果、坑、下一步
@@ -41,7 +44,9 @@ concept_life/
 │   ├── IDEAS.md              # 扩展想法池，带 ID、成本、评估、风险
 │   └── AI_USAGE.md           # 课程提交用的 AI 使用说明
 ├── scripts/
-│   └── m0_from_cache.py      # M0 命令行入口
+│   ├── m0_from_cache.py      # M0 命令行入口
+│   ├── crawl.py              # M1 Acemap 抓取，缓存、断点续抓、manifest
+│   └── data_report.py        # M1 数据质量报告：年份、字段、层级、缺失
 ├── src/
 │   └── concept_life/
 │       ├── __init__.py       # 包版本
@@ -51,13 +56,16 @@ concept_life/
 │       ├── series.py         # 逐年计数、展示名
 │       └── rising.py         # share 归一化的上升榜
 ├── tests/
-│   ├── test_schema.py        # 解析、层级过滤、top-k
+│   ├── test_schema.py        # 解析、层级过滤、top-k、领域过滤
+│   ├── test_ingest.py        # 停用词、空概念论文丢弃
 │   └── test_temporal.py      # share 归一化、new 概念、最小计数
 ├── data/
-│   ├── raw/                  # 原始响应，只增不改，git 忽略
-│   └── processed/            # M0 产物，可重建，git 忽略
+│   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
+│   │   └── acemap/           # 抓取响应，文件名是查询哈希 + 页码
+│   └── processed/            # 论文表和时间线，可重建，git 忽略
 └── runs/
-    └── m0/                   # 本次运行的配置和摘要，git 忽略
+    ├── m0/                   # M0 运行的配置和摘要，git 忽略
+    └── m1/                   # M1 运行的配置、摘要和报告，git 忽略
 ```
 
 `data/` 和 `runs/` 是运行产物，git 忽略，目录由脚本按需创建。产物可以随时删掉重跑。
@@ -72,6 +80,10 @@ concept_life/
 | `rising.py` | 用前后窗口的 share 差值和增长率排名 | 不读文件，不画图 |
 | `config.py` | 默认配置和 JSON 覆盖，深合并 | 不校验业务语义 |
 | `m0_from_cache.py` | 串起上面四步，写 CSV 和 summary | 不实现 M1 之后的逻辑 |
+| `crawl.py` | 按查询和页码抓 Acemap，缓存原始响应，写 manifest | 不解析、不做领域过滤 |
+| `data_report.py` | 读 `papers.jsonl`，输出年份、字段、层级、缺失统计 | 不做排名，不做图 |
+| `queries.json` | 170 个抓取查询，分 `seeds`、`classic`、`recent` | 不保证每个查询都有结果 |
+| `m1.json` | M1 覆盖配置：全量缓存、CS 过滤、停用词 | 不改变 `default.json` 的 M0 行为 |
 
 ## 数据流
 
@@ -90,6 +102,24 @@ concept_life/
                                       │
                                       ▼
                                  runs/m0/summary.json
+```
+
+M1 的数据流是在 M0 前面加一段抓取：
+
+```text
+configs/queries.json
+        │
+        ▼
+   scripts/crawl.py ──► data/raw/acemap/*.json
+        │               data/raw/acemap_manifest.jsonl
+        │               data/raw/crawl_summary.json
+        ▼
+   m0_from_cache.py --config configs/m1.json
+        │
+        ▼
+   data/processed/papers.jsonl
+        │
+        └──► data_report.py ──► runs/m1/report/
 ```
 
 所有频率都用“占当年论文总数的比例”，不用原始计数。语料每年在增长，原始计数会把“语料变大”误判成“概念变热”。
@@ -141,6 +171,50 @@ python scripts/m0_from_cache.py
 
 M0 不发起网络请求。断网也能跑。
 
+## M1 全量抓取
+
+M1 会真正访问 Acemap，需要 `requests`。先安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+抓取 170 个查询，每个查询 4 页，每页 100 条：
+
+```bash
+python scripts/crawl.py --pages 4 --size 100
+```
+
+产物：
+
+- `data/raw/acemap/`：原始响应文件，文件名是查询哈希加页码。
+- `data/raw/acemap_manifest.jsonl`：每次请求的状态、结果数、错误。
+- `data/raw/crawl_summary.json`：查询数、请求数、缓存命中、失败数、耗时。
+
+断点续抓：直接重跑同一条命令，已有文件会跳过。只想检查缓存覆盖：
+
+```bash
+python scripts/crawl.py --offline --pages 4 --size 100
+```
+
+抓完用 M1 配置重跑 M0，再做质量报告：
+
+```bash
+python scripts/m0_from_cache.py --config configs/m1.json --runs runs/m1
+python scripts/data_report.py --papers data/processed/papers.jsonl --config configs/m1.json
+```
+
+`configs/m1.json` 做三件事：把缓存目录指向 `data/raw/acemap`，只保留 `topics` 里含 `computer science` 的论文，丢掉 `Field (mathematics)`、`Key (lock)` 这类歧义概念。没有 `topics` 的论文默认保留，数量会写进报告。
+
+报告产物在 `runs/m1/report/`：
+
+- `year_histogram.csv` 和 `year_histogram.txt`：逐年论文数。
+- `field_counts.csv`：领域和子领域分布。
+- `level_counts.csv`：概念层级分布。
+- `summary.json`：论文数、概念数、缺失 DOI、缺失 topics、前后窗口论文数。
+
+本次全量结果：679 次请求，67,896 条原始记录，0 失败，601MB。去重和 CS 过滤后 42,460 篇论文，10,957 个概念，283,434 个概念实例，平均每篇 6.68 个。CS 覆盖 99.5%，206 篇没有 topics。年份 1990 到 2025，2021 年峰值 7,106 篇，2024 年 1,481 篇，2025 年 265 篇。近两年不完整，生命周期分析主区间设为 1995-2023，见 `D-010`。如果某年论文太少，先扩查询集，不要直接做生命周期事件。
+
 ## 产物格式
 
 `data/processed/papers.jsonl` 每行一篇论文：
@@ -154,7 +228,8 @@ M0 不发起网络请求。断网也能跑。
   "cited_by_count": 4284,
   "concepts": [
     {"id": "Sk...", "name": "Machine learning", "level": 2, "score": 0.62}
-  ]
+  ],
+  "fields": ["Artificial Intelligence", "Computer Science"]
 }
 ```
 
@@ -209,9 +284,11 @@ M0 不发起网络请求。断网也能跑。
 python -m unittest discover -s tests -v
 ```
 
-预期 7 个测试全部通过。测试覆盖：
+预期 11 个测试全部通过。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
+- 领域过滤、topic 字段提取、无 topics 论文的保留策略。
+- 概念停用词、所有概念被停用后丢弃论文。
 - share 归一化：语料翻倍不会让概念看起来变热。
 - 历史为 0 的概念标记为 `new`，不产生天文数字。
 - 最小计数过滤。
@@ -228,10 +305,13 @@ python -m unittest discover -s tests -v
 
 ## 已知限制
 
-- M0 的缓存来自先导项目的 96 个查询，去重后 1187 篇，按 level>=2 过滤后 1054 篇。年份集中在 2019 到 2021，不是全量语料。
-- 上升榜被跨领域和歧义概念污染，比如 `Health care`、`Key (lock)`、`Focus (optics)`、`Domain (mathematical analysis)`。M1 要加领域过滤和停用词表，见 `P-017` 和 `I-014`。
+- M0 的缓存来自先导项目的 96 个查询，去重后 1187 篇，按 level>=2 过滤后 1054 篇。年份集中在 2019 到 2021，只能用来验证管线，不能当作全量语料。
+- M1 的语料是 42,460 篇论文、10,957 个概念，来自 67,896 条原始记录。年份 1990 到 2025，但 2024 年只有 1,481 篇，2025 年只有 265 篇，Acemap 索引滞后，近两年不能用来判断死亡或趋势，见 `D-010`。
+- 领域过滤是论文级的，概念级歧义仍在。`Pattern recognition (psychology)`、`Image (mathematics)`、`Feature (linguistics)`、`Voltage`、`Benchmark (surveying)` 这类标签靠停用词只能清掉一部分，真正的解法是别名合并或概念级领域分类，见 `P-025`、`I-010`、`I-014`。
+- 没有 `topics` 的论文默认保留，本次有 206 篇，数量写在 `runs/m1/report/summary.json` 的 `missing_fields`。
 - 约 32% 的记录没有摘要。生命周期分析不需要摘要，但后续做语义相似度时需要另找数据。
 - Acemap 只返回 `referenced_works_count`，没有引用列表。citation 脉络需要 OpenAlex 或 Semantic Scholar，见 `I-005`。
+- Acemap 的 `meta.count` 上限是 10000，不能当作语料真实总量，见 `P-020`。
 - “死亡”指在语料中连续 N 年没有出现，不是现实中消失。海报和报告要用“在语料中消失”这种措辞。
 - 当前没有 demo。M4 才做，接口已经按“只读标准产物”设计。
 

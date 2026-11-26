@@ -1,0 +1,25 @@
+{
+  "data": {
+    "cache_dir": "data/raw/acemap",
+    "min_year": 1990,
+    "max_year": 2025,
+    "domain": "computer science",
+    "keep_unknown_domain": true
+  },
+  "concepts": {
+    "stoplist": [
+      "Field (mathematics)",
+      "Key (lock)",
+      "Focus (optics)",
+      "Domain (mathematical analysis)",
+      "Health care",
+      "Disease",
+      "Coronavirus disease 2019 (COVID-19)",
+      "Task (project management)"
+    ]
+  },
+  "rising": {
+    "min_curr_count": 10,
+    "top_k": 50
+  }
+}

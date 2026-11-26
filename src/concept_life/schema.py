@@ -25,10 +25,12 @@ class Paper:
     doi: str | None
     cited_by_count: int | None
     concepts: tuple[Concept, ...]
+    fields: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["concepts"] = [asdict(concept) for concept in self.concepts]
+        data["fields"] = list(self.fields)
         return data
 
 
@@ -84,6 +86,15 @@ def parse_work(
     if not concepts:
         return None
 
+    # Topic taxonomy is used only for domain filtering. Domain, field and
+    # subfield are all kept because Acemap populates them inconsistently.
+    fields: set[str] = set()
+    for topic in work.get("topics") or []:
+        for key in ("domain", "field", "subfield"):
+            name = (topic.get(key) or {}).get("display_name")
+            if name:
+                fields.add(str(name))
+
     return Paper(
         id=str(work_id),
         title=str(work.get("title") or work.get("display_name") or ""),
@@ -91,4 +102,5 @@ def parse_work(
         doi=work.get("doi"),
         cited_by_count=work.get("cited_by_count"),
         concepts=tuple(concepts),
+        fields=tuple(sorted(fields)),
     )

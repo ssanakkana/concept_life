@@ -16,11 +16,16 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "cache_dir": "../kg_search/cache",
         "min_year": 1990,
         "max_year": 2025,
+        # None disables domain filtering; M1 config sets "computer science".
+        "domain": None,
+        "keep_unknown_domain": True,
     },
     "concepts": {
         "top_k_per_paper": 10,
         "min_level": 2,
         "min_score": 0.0,
+        # Ambiguous or cross-domain concept names to drop before aggregation.
+        "stoplist": [],
     },
     "windows": {
         # Explicit year lists, not [start, end] ranges.

@@ -23,3 +23,9 @@
 | P-017 | 上升榜出现 `Health care`、`Key (lock)`、`Focus (optics)`、`Domain (mathematical analysis)` | Acemap 把跨领域同名词映射到同一概念；先导查询集带进医学、物理论文；小计数噪声 | M1 加领域过滤（按 `topics` 的 field/domain），加歧义概念停用词表，提高 `min_curr_count` | `ingest.py`、`configs/default.json` |
 | P-018 | `[2015, 2017]` 只统计了 2015 和 2017 两年 | 配置是年份列表，不是区间 | 配置改成显式年份列表 `[2015, 2016, 2017]`；文档写清楚 | `configs/default.json` |
 | P-019 | 1187 篇缓存过滤 level>=2 后只剩 1054 篇 | 部分论文只有 level 0/1 的泛概念 | 接受损失，但要在 worklog 记录；M1 扩大语料补回来 | `ingest.py` |
+| P-020 | 把 Acemap 的 `meta.count` 当成语料真实总量 | 接口把 `count` 截断在 10000 | 不拿 `count` 当总量；按 `total_pages` 和每页 `results` 长度决定何时停 | `crawl.py` |
+| P-021 | 领域过滤后仍有 `Field (mathematics)` 这种跨领域概念 | 过滤是论文级的，一篇 CS 论文可以带数学概念 | 用概念停用词做 band-aid；真正的解法是概念级领域分类或别名合并，见 `I-010`、`I-014` | `ingest.py`、`configs/m1.json` |
+| P-022 | 部分论文没有 `topics`，不知道属于哪个领域 | Acemap 的元数据不完整 | 默认保留，记录 `missing_fields` 数量；如果噪声太大再改成丢弃 | `ingest.py`、`data_report.py` |
+| P-023 | 停用词可能把一篇论文的所有概念都过滤掉 | 有些论文只带一个歧义概念 | 概念全被过滤时丢弃该论文，并在报告里记录；不要留下空概念论文 | `ingest.py` |
+| P-024 | 2024 和 2025 论文数断崖式下降，2024 只有 1,481 篇，2025 只有 265 篇 | Acemap 索引滞后，近两年不完整 | 生命周期分析主区间设为 1995-2023，近两年不参与死亡和趋势判断，见 `D-010` | `configs/m1.json`、`mine.py` |
+| P-025 | top rising 里仍有 `Pattern recognition (psychology)`、`Image (mathematics)`、`Feature (linguistics)`、`Voltage`、`Benchmark (surveying)` | Acemap/OpenAlex 的概念标签有歧义，论文级领域过滤管不到概念级标签 | 停用词只能清掉最明显的几个；真正的解法是别名合并或概念级领域分类，见 `I-010`、`I-014` | `configs/m1.json`、`ingest.py` |

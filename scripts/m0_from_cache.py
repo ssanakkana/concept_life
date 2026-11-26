@@ -95,6 +95,9 @@ def main() -> None:
         top_k=config["concepts"]["top_k_per_paper"],
         min_level=config["concepts"]["min_level"],
         min_score=config["concepts"]["min_score"],
+        domain=config["data"].get("domain"),
+        keep_unknown_domain=config["data"].get("keep_unknown_domain", True),
+        stoplist=set(config["concepts"].get("stoplist", [])),
     )
     min_year = config["data"]["min_year"]
     max_year = config["data"]["max_year"]

@@ -2,12 +2,15 @@
   "data": {
     "cache_dir": "../kg_search/cache",
     "min_year": 1990,
-    "max_year": 2025
+    "max_year": 2025,
+    "domain": null,
+    "keep_unknown_domain": true
   },
   "concepts": {
     "top_k_per_paper": 10,
     "min_level": 2,
-    "min_score": 0.0
+    "min_score": 0.0,
+    "stoplist": []
   },
   "windows": {
     "prev": [2015, 2016, 2017],
