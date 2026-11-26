@@ -14,7 +14,7 @@
 | M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
 | M4 | Streamlit demo、海报、讲稿 | demo 已实现，7 页 smoke test 通过；海报和讲稿未做 |
 | M5 | 生命周期聚类（扩展） | 已实现，5 类，silhouette 0.285 |
-| M6 | 替代复核页（扩展） | 已实现，7 页 demo，precision 待人工标注 |
+| M6 | 替代复核页（扩展） | 已实现，20/20 标注，precision@10 0.30，precision@20 0.20 |
 
 扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M6 和 demo，海报和讲稿还没有。
 
@@ -319,6 +319,8 @@ uv run python scripts/evaluate_replacements.py
 
 输出 precision@10 和 precision@20。未标注和“不确定”不计入分母，页面会显示“已标注 X/10”；top-10 没标完时，不要把部分标注的 precision 当成完整 top-10 精确率。
 
+本次 20 对全部标完，4 对判为有效：Cryptocurrency→Blockchain、Distributed learning→Federated learning、Query language→SQL、Utility computing→Edge computing。precision@10 = 0.30，precision@20 = 0.20。其中 11 对由人判断，9 对由 AI 按“宽泛接替”标准补判，报告里写“1 人 + AI 第二判断”，不要写成两个人独立标注，见 `D-022`。
+
 趋势预测读同样的数据，做三窗口回测：
 
 ```bash
@@ -497,6 +499,7 @@ uv run python -m unittest discover -s tests -v
 - 早期年份论文少，`min_year_total=100` 只让峰值和爆发在语料足够大的年份计算，见 `P-027`。
 - 替代检测是候选生成，不是自动替代。共现相似度偏向互补概念，RNN→Transformer 被漏掉，需要 citation 或文本信号，见 `P-031`、`I-005`。
 - 替代 precision 依赖人工标注，标签是主观判断，未标注和“不确定”不计入分母。top-10 没标完时，不要把部分标注的 precision 当成完整精确率，见 `P-041`、`D-021`。
+- 本次 20 对里 11 对由人判断，9 对由 AI 补判；采用“宽泛接替”标准。换成严格同功能标准，precision 会降到 0.10 左右，见 `D-022`、`P-044`、`P-045`。
 - 趋势预测的绝对精度不高，模型 precision@10 0.200，高于 growth 和 random 但远不到可靠预测。标签定义会改变结论，绝对增长下 frequency 基线很强，见 `D-014`。
 - 趋势特征一度用全语料共现图，泄漏未来信息；现在每个窗口只用 T 年以前的图，见 `P-030`、`D-016`。
 - 生命周期聚类只用形状特征，类型名是描述性的，不是金标。没有出现“常青型”，复活型只有 37 个且事件有噪声，见 `D-020`、`P-038`。

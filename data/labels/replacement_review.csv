@@ -1,21 +1,21 @@
-﻿rank,old_name,new_name,old_peak_year,new_year,jaccard,correlation,overtake,score,valid_1_0,notes
-1,Cryptocurrency,Blockchain,2016,2016,0.081606,-0.8207,0.892562,0.059779,,
-2,Pascal (unit),Segmentation,2015,2019,0.112104,-0.44027,0.913333,0.045078,,
-3,Java,Source code,2008,2023,0.085502,-0.544047,0.810526,0.037703,,
-4,Machine translation,Language model,2018,2020,0.056738,-0.829025,0.800847,0.037669,,
-5,Machine translation,Transformer,2018,2019,0.051075,-0.890449,0.791111,0.03598,,
-6,Workload,Load balancing (electrical power),2014,2019,0.092233,-0.649482,0.584615,0.035021,,
-7,Cryptocurrency,Smart contract,2016,2020,0.073579,-0.655586,0.666667,0.032158,,
-8,Mobile edge computing,Enhanced Data Rates for GSM Evolution,2018,2016,0.166909,-0.446507,0.842105,0.031379,,
-9,Distributed learning,Federated learning,2019,2019,0.087464,-0.408213,0.875,0.031241,,
-10,Query language,SQL,2012,2023,0.091512,-0.434232,0.777778,0.030907,,
-11,Utility computing,Edge computing,2009,2016,0.06055,-0.63261,0.803279,0.030769,,
-12,Shortest path problem,Graph,2005,2018,0.064315,-0.510836,0.935802,0.030745,,
-13,Residual neural network,Pruning,2017,2019,0.032646,-0.945233,0.931818,0.028754,,
-14,Word (group theory),Language model,2018,2020,0.036004,-0.868044,0.891509,0.027862,,
-15,Machine translation,Voltage,2018,2019,0.040306,-0.882033,0.777251,0.027632,,
-16,Search engine,SQL,2005,2023,0.216774,-0.170076,0.724138,0.026698,,
-17,Genetic algorithm,Selection (genetic algorithm),2007,2014,0.064665,-0.660138,0.613208,0.026177,,
-18,Static analysis,Malware,2008,2011,0.079807,-0.514773,0.625,0.025676,,
-19,Obstacle,Mobile robot,2017,2020,0.10989,-0.441947,0.526316,0.025561,,
-20,Replication (statistics),Latency (audio),2011,2016,0.043263,-0.732691,0.747748,0.023703,,
+﻿rank,old_id,old_name,new_id,new_name,old_peak_year,new_year,support,jaccard,correlation,score,old_peak_share,old_last_share,new_last_share,overtake,valid_1_0,notes
+1,SjhGN0U3RENERw,Cryptocurrency,SjlFRUdERkVFNzc,Blockchain,2016,2016,63,0.081606,-0.8207,0.059779,0.00630418,0.00255353,0.02121391,0.892562,1,焦点从加密货币转向底层区块链，宽泛接替；不是严格同义替换
+2,SkVDRDdGRENG,Pascal (unit),SkZHRDc3R0E3,Segmentation,2015,2019,138,0.112104,-0.44027,0.045078,0.01170213,0.00255353,0.02691023,0.913333,0,标签噪声：Pascal 是压强单位，和图像分割无关
+3,SkNCRjk4RTk3Nw,Java,SkJBODlEOURB,Source code,2008,2023,92,0.085502,-0.544047,0.037703,0.02884615,0.0070713,0.03024946,0.810526,0,Java 是 source code 的一个实例，不是接替
+4,Sjk3QTc3Qzk4Qw,Machine translation,SjhBRTlHQUVENw,Language model,2018,2020,72,0.056738,-0.829025,0.037669,0.02244039,0.00923198,0.03712434,0.800847,0,
+5,Sjk3QTc3Qzk4Qw,Machine translation,SkREQTk5R0JF,Transformer,2018,2019,76,0.051075,-0.890449,0.03598,0.02244039,0.00923198,0.03496366,0.791111,0,
+6,SjlFRUZCRUQ4N0M,Workload,SjhBRkdDRzk4OQ,Load balancing (electrical power),2014,2019,57,0.092233,-0.649482,0.035021,0.01424501,0.00530348,0.00746415,0.584615,0,
+7,SjhGN0U3RENERw,Cryptocurrency,SjlFRUdHQzdDRkc,Smart contract,2016,2020,22,0.073579,-0.655586,0.032158,0.00630418,0.00255353,0.00510705,0.666667,0,智能合约是区块链上的应用机制，不是加密货币的接替
+8,SjlFRUQ3RDhDRjk,Mobile edge computing,SjhEOUE3RUQ5RQ,Enhanced Data Rates for GSM Evolution,2018,2016,115,0.166909,-0.446507,0.031379,0.00771388,0.00294638,0.01571401,0.842105,0,
+9,SjlFRUdDRjlHNzg,Distributed learning,SjlHRzlDOUM3RTg,Federated learning,2019,2019,30,0.087464,-0.408213,0.031241,0.00241955,0.00117855,0.00824985,0.875,1,联邦学习需要用到分布式架构，我不清楚是不是替代，可能是？
+10,SjhHOTc5RkJBOQ,Query language,SkM4N0ZFN0JHRw,SQL,2012,2023,69,0.091512,-0.434232,0.030907,0.01269036,0.0047142,0.01649971,0.777778,1,应该是
+11,SkZDODdEQzdF,Utility computing,SjlFRUZCQ0RHOUE,Edge computing,2009,2016,33,0.06055,-0.63261,0.030769,0.01945525,0.0023571,0.00962483,0.803279,1,可能是
+12,Sjk5Q0c3OUM5,Shortest path problem,SjhBOUM5QzhCQQ,Graph,2005,2018,206,0.064315,-0.510836,0.030745,0.03267974,0.00510705,0.0744451,0.935802,0,应该是其中一个具体问题
+13,SjlHQkJENzg4OEc,Residual neural network,Sjg3Rjc4N0dFQw,Pruning,2017,2019,19,0.032646,-0.945233,0.028754,0.00296004,0.00117855,0.01610686,0.931818,0,
+14,Skc3RjdDQ0ZF,Word (group theory),SjhBRTlHQUVENw,Language model,2018,2020,40,0.036004,-0.868044,0.027862,0.01612903,0.00451778,0.03712434,0.891509,0,标签噪声：群论里的 word 和语言模型无关
+15,Sjk3QTc3Qzk4Qw,Machine translation,SjhEQ0Y3OEFHRw,Voltage,2018,2019,58,0.040306,-0.882033,0.027632,0.02244039,0.00923198,0.03221371,0.777251,0,
+16,SkdFRkNCQTg3,Search engine,SkM4N0ZFN0JHRw,SQL,2005,2023,168,0.216774,-0.170076,0.026698,0.03921569,0.0062856,0.01649971,0.724138,0,搜索引擎和 SQL 是不同工具，不是接替
+17,SkZGRjdGRUE,Genetic algorithm,SkY4RzhFOEdF,Selection (genetic algorithm),2007,2014,56,0.064665,-0.660138,0.026177,0.02912621,0.00805343,0.01276763,0.613208,0,选择算子是遗传算法的一部分，不是接替
+18,SkdFREZEQkM5,Static analysis,SkNCOEREQkc4RQ,Malware,2008,2011,66,0.079807,-0.514773,0.025676,0.02403846,0.00648203,0.01080338,0.625,0,静态分析是方法，恶意软件是对象，不是接替
+19,SjlFRUREQzc4R0E,Obstacle,SjhHR0REQkVG,Mobile robot,2017,2020,20,0.10989,-0.441947,0.025561,0.00444006,0.00176783,0.00196425,0.526316,0,
+20,Sjg5Q0c3RUdG,Replication (statistics),SkY5RkVEOEQ5,Latency (audio),2011,2016,35,0.043263,-0.732691,0.023703,0.02535211,0.0054999,0.01630328,0.747748,0,标签噪声：统计学的 replication 和音频 latency 无关

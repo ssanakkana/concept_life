@@ -31,6 +31,7 @@
 | W-20261126-06 | 2026-11-26 | M4 Streamlit demo 与 uv 环境 | 完成，33e9755 |
 | W-20261126-07 | 2026-11-26 | M5 生命周期聚类与 demo 页面 | 完成，9a12cbb |
 | W-20261126-08 | 2026-11-26 | M6 替代复核页与 precision 评估 | 完成，1942441 |
+| W-20261126-09 | 2026-11-26 | 替代候选 20 对标注与 precision 结果 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -470,3 +471,48 @@ uv run python scripts/evaluate_replacements.py
 - 输出采纳/拒绝：采纳“demo 内标注 + CSV 保存 + 单独评估脚本”的方案；没有引入新的标注平台或数据库。
 
 **Commit**：1942441
+
+**后续修复**：d96e47e 把人工标签从 `runs/m3/replacement_review.csv` 迁到 `data/labels/replacement_review.csv`，让标签进 git。
+
+## W-20261126-09 · 2026-11-26 · 会话 01（续）
+
+**目标**：完成替代候选的人工标注，算出 precision@10 和 precision@20。
+
+**做了什么**：
+
+- 用户先标了 11 对，写了备注，包括 3 个“可能是 / 应该是”的 1。
+- AI 看了剩下的 9 对的时间线和备注，按“宽泛接替”标准补标：
+  - 1 表示新概念在同一研究生态位里接替旧概念的关注度，包括具体化、平台化或焦点转移。
+  - 0 表示互补、父子组件、或概念标签噪声。
+- 20 对全部标完，标签存 `data/labels/replacement_review.csv`，指标存 `data/labels/replacement_metrics.json`。
+
+**命令**：
+
+```bash
+uv run python scripts/evaluate_replacements.py --out data/labels/replacement_metrics.json
+```
+
+**结果**：
+
+- 20/20 已标注。
+- 4 对被判为有效：Cryptocurrency→Blockchain（1）、Distributed learning→Federated learning（9）、Query language→SQL（10）、Utility computing→Edge computing（11）。
+- precision@10 = 0.300（top-10 里 3 个有效），precision@20 = 0.200（20 个里 4 个有效）。
+- AI 补标的 9 对里只有 Cryptocurrency→Blockchain 判 1，其余 8 对判 0：Pascal→Segmentation、Java→Source code、Cryptocurrency→Smart contract、Word (group theory)→Language model、Search engine→SQL、Genetic algorithm→Selection、Static analysis→Malware、Replication (statistics)→Latency (audio)。
+
+**踩坑**：
+
+- 替换的标准会直接改变 precision。用“宽泛接替”标准，precision@10 是 0.30；用“严格同功能替换”标准，Cryptocurrency→Blockchain、Query language→SQL 这些都要改判 0，precision 会降到 0.10 左右。海报必须写清楚标准，见 `D-022`。
+- 9 对是 AI 补标的，不是人类金标。用户标了 11 对，AI 标了 9 对；报告里要写“1 人 + AI 第二判断”，不能写成“两个人独立标注”。
+- 概念标签噪声仍然存在，Pascal (unit)、Word (group theory)、Replication (statistics) 这些对是标签错误，不是替代。
+
+**下一步**：
+
+- 更新 README、PLAN、IDEAS、DECISIONS、PITFALLS 的结果。
+- 提交标签和指标，推送仓库。
+- 最后做海报和两分钟讲稿。
+
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户说“能评估我的我都评估了，剩下的我无法判断，你也可以看看我写的注释，然后自己做一下判断”。
+- 输出采纳/拒绝：采纳“宽泛接替”标准补标 9 对；没有改用户已标的 11 对；在文档里明确 9 对是 AI 第二判断，不是人类金标。

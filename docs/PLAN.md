@@ -148,4 +148,4 @@ M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,79
 - [x] `scripts/evaluate_replacements.py`
 - [x] 测试
 
-M6 结果：demo 七页 0 异常，27 个测试通过。当前标签 0/20，等人逐对标；标完后 `uv run python scripts/evaluate_replacements.py` 输出 precision@10 和 precision@20。
+M6 结果：demo 七页 0 异常，27 个测试通过。20 对全部标完，4 对有效：Cryptocurrency→Blockchain、Distributed learning→Federated learning、Query language→SQL、Utility computing→Edge computing。precision@10 = 0.300，precision@20 = 0.200。11 对由人判断，9 对由 AI 按“宽泛接替”标准补判，见 `D-022`。

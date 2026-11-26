@@ -47,3 +47,5 @@
 | P-041 | 替代复核页的 precision 只在已标注行上算，top-10 没标完时会偏高或偏低 | 未标注和“不确定”不计入分母 | 页面显示“已标注 X/10”；海报上写清楚分母，不要把它当成完整 top-10 精确率 | `dashboard.py`、`app.py` |
 | P-042 | 保存复核后 `replacement_review.csv` 的列变多 | 页面把完整候选字段写回 CSV | `load_review` 只按 rank 取 valid 和 notes；不要改 rank 或重排文件 | `dashboard.py`、`scripts/evaluate_replacements.py` |
 | P-043 | 人工标签被当成客观金标 | 替代关系本身有歧义，不同人判断会不同 | 海报写标注人数和口径；有条件让两个人独立标，算一致率 | `replacement_review.csv`、`D-021` |
+| P-044 | 9 对是 AI 补标的，却被写成“人工标注” | 用户只能判断 11 对，剩下 9 对由 AI 看曲线和备注判断 | 报告写“1 人 + AI 第二判断”，不要把 AI 标签包装成人类金标 | `data/labels/replacement_review.csv`、`D-022` |
+| P-045 | precision 在不同替代标准下差很多 | 宽泛接替标准把 Cryptocurrency→Blockchain、Query language→SQL 算 1；严格同功能标准会算 0 | 海报写清楚标准；如果要和别的系统比，先用同一标准重标 | `D-022`、`data/labels/replacement_metrics.json` |
