@@ -38,7 +38,7 @@
 
 P0 是核心，先做；P1 是强加分；P2 是锦上添花；P3 只有时间富余才做。
 
-已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核表在 `runs/m3/replacement_review.csv`。I-012 交互式研究地图还没有做，demo 目前是时间线、聚类散点和表格，不是节点图。
+已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核标签在 `data/labels/replacement_review.csv`。I-012 交互式研究地图还没有做，demo 目前是时间线、聚类散点和表格，不是节点图。
 
 ## I-001 概念演化卡片与时间线
 

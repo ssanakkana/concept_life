@@ -2,7 +2,7 @@
 """Compute precision@10 and precision@20 from human-labeled replacements.
 
 Run the demo's 替代复核 page first, or fill
-runs/m3/replacement_review.csv's valid_1_0 column manually.
+data/labels/replacement_review.csv's valid_1_0 column manually.
 
 Usage:
     uv run python scripts/evaluate_replacements.py

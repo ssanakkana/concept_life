@@ -15,6 +15,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data" / "processed"
+LABELS_DIR = ROOT / "data" / "labels"
 RUNS_DIR = ROOT / "runs"
 
 
@@ -70,9 +71,17 @@ def load_review(
     review_path: Path | None = None,
     limit: int = 20,
 ) -> pd.DataFrame:
-    """Merge replacement candidates with human labels by rank."""
+    """Merge replacement candidates with human labels by rank.
+
+    Human labels live in ``data/labels/replacement_review.csv`` and are tracked
+    by git. If that file does not exist yet, fall back to the generated template
+    in ``runs/m3/``.
+    """
     replacements = load_replacements(replacements_path)
-    review_path = review_path or RUNS_DIR / "m3" / "replacement_review.csv"
+    labels_path = LABELS_DIR / "replacement_review.csv"
+    template_path = RUNS_DIR / "m3" / "replacement_review.csv"
+    if review_path is None:
+        review_path = labels_path if labels_path.exists() else template_path
     if review_path.exists():
         review = pd.read_csv(review_path, encoding="utf-8-sig")
         keep = review[["rank", "valid_1_0", "notes"]].copy()
@@ -161,6 +170,7 @@ def check_artifacts() -> list[Path]:
         DATA_DIR / "replacements.csv",
         DATA_DIR / "trend_predictions.csv",
         DATA_DIR / "lifecycle_clusters.csv",
+        LABELS_DIR / "replacement_review.csv",
         RUNS_DIR / "m1" / "report" / "year_histogram.csv",
         RUNS_DIR / "m1" / "report" / "summary.json",
         RUNS_DIR / "m2" / "summary.json",

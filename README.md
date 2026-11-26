@@ -306,11 +306,12 @@ uv run python scripts/m3_replacements.py
 
 - `data/processed/replacements.jsonl` 和 `replacements.csv`。
 - `runs/m3/replacement_summary.json`。
-- `runs/m3/replacement_review.csv`，`valid_1_0` 留空，等人填。
+- `runs/m3/replacement_review.csv`，初始模板，`valid_1_0` 留空。
+- `data/labels/replacement_review.csv`，人工标签文件，进 git；demo 的替代复核页读写这个文件。
 
 本次结果：234 个衰退概念、523 个上升概念、52,349 个共现对、30 个候选对。前十里有 Machine translation→Transformer、Distributed learning→Federated learning 等合理对，也有 Pascal、Workload、Java 这种标签噪声。共现相似度偏向互补概念，RNN→Transformer 因为直接共现太少被漏掉，所以这是候选生成，不是自动替代。
 
-人工复核在 demo 的“替代复核”页做。逐对看旧概念和新概念的时间线，标“是 / 否 / 不确定”，保存回 `runs/m3/replacement_review.csv`。标完运行：
+人工复核在 demo 的“替代复核”页做。逐对看旧概念和新概念的时间线，标“是 / 否 / 不确定”，保存回 `data/labels/replacement_review.csv`。标完运行：
 
 ```bash
 uv run python scripts/evaluate_replacements.py

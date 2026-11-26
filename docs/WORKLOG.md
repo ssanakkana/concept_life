@@ -430,9 +430,10 @@ uv run python scripts/smoke_demo.py
 
 **做了什么**：
 
-- `dashboard.py` 增加 `load_review` 和 `review_precision`：按 rank 合并 `replacements.csv` 和 `replacement_review.csv`，只对已标注行算精确率。
+- `dashboard.py` 增加 `load_review` 和 `review_precision`：按 rank 合并 `replacements.csv` 和人工标签，只对已标注行算精确率。
 - `app.py` 增加“替代复核”页：候选选择、上一对/下一对、两条时间线、Jaccard 和相关系数、是/否/不确定、备注、保存。
-- 新增 `scripts/evaluate_replacements.py`：从 CSV 算 precision@10 和 precision@20，写 `runs/m3/replacement_metrics.json`。
+- 人工标签存到 `data/labels/replacement_review.csv`，进 git；`runs/m3/replacement_review.csv` 只作为初始模板。
+- 新增 `scripts/evaluate_replacements.py`：从标签文件算 precision@10 和 precision@20，写 `runs/m3/replacement_metrics.json`。
 - `tests/test_dashboard.py` 增加未标注行不计入分母的测试，测试从 26 个增加到 27 个。
 - `scripts/smoke_demo.py` 覆盖七个页面。
 
@@ -453,8 +454,9 @@ uv run python scripts/evaluate_replacements.py
 **踩坑**：
 
 - 页面的 precision 只在已标注行上算。如果 top-10 只标了 3 个，precision 是 3 个里的比例，不是 top-10 的精确率。页面上写了“已标注 X/10”。
-- 页面保存时会把完整的候选字段写回 `replacement_review.csv`，文件 schema 比以前宽。`load_review` 只取 rank、valid、notes，所以不影响。
+- 页面保存时会把完整的候选字段写回标签文件，schema 比模板宽。`load_review` 只取 rank、valid、notes，所以不影响。
 - 标签是人工判断，不是模型输出；海报上要写清楚标注人数和口径。
+- 标签一开始写在 `runs/` 里，但 `runs/` 被 git 忽略，队友标完留不下来。已迁到 `data/labels/replacement_review.csv`，空表也提交，模板留在 `runs/m3/`。
 
 **下一步**：
 

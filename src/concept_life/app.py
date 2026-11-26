@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from concept_life.dashboard import (  # noqa: E402
+    LABELS_DIR,
     RUNS_DIR,
     check_artifacts,
     concept_events,
@@ -256,7 +257,7 @@ def page_review(series: pd.DataFrame) -> None:
     st.title("替代复核")
     st.caption(
         "算法只生成候选，是否真的替代由人判断。标注结果写回 "
-        "runs/m3/replacement_review.csv。"
+        "data/labels/replacement_review.csv。"
     )
     review = load_review()
     if review.empty:
@@ -333,11 +334,9 @@ def page_review(series: pd.DataFrame) -> None:
             "" if value == -1 else value
         )
         review.loc[review["rank"] == rank, "notes"] = st.session_state[notes_key]
-        review.to_csv(
-            RUNS_DIR / "m3" / "replacement_review.csv",
-            index=False,
-            encoding="utf-8-sig",
-        )
+        labels_path = LABELS_DIR / "replacement_review.csv"
+        labels_path.parent.mkdir(parents=True, exist_ok=True)
+        review.to_csv(labels_path, index=False, encoding="utf-8-sig")
         st.success("已保存")
         st.rerun()
 

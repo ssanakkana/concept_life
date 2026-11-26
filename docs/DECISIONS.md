@@ -206,7 +206,7 @@
 
 **背景**：M3 的替代检测只生成候选，precision 未知。需要一个人工复核入口，又不能引入标注平台或数据库。
 
-**决定**：在 demo 里加“替代复核”页，读 `replacements.csv` 和 `runs/m3/replacement_review.csv`，按 rank 合并。人标“是 / 否 / 不确定”，保存回 `replacement_review.csv`。`scripts/evaluate_replacements.py` 算 precision@10 和 precision@20，只对 valid_1_0 为 1 或 0 的行算，未标注和不确定排除在分母外。页面显示“已标注 X/k”。
+**决定**：在 demo 里加“替代复核”页，读 `replacements.csv` 和人工标签文件，按 rank 合并。人工标签存在 `data/labels/replacement_review.csv`，进 git；`runs/m3/replacement_review.csv` 只是初始模板。人标“是 / 否 / 不确定”，保存回标签文件。`scripts/evaluate_replacements.py` 算 precision@10 和 precision@20，只对 valid_1_0 为 1 或 0 的行算，未标注和不确定排除在分母外。页面显示“已标注 X/k”。
 
 **备选**：Excel 手工填；Label Studio；让 LLM 先标再人工抽检。
 
