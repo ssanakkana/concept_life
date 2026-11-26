@@ -1,0 +1,44 @@
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from concept_life.schema import parse_work  # noqa: E402
+
+
+class SchemaTest(unittest.TestCase):
+    def test_filters_level_and_applies_top_k(self):
+        work = {
+            "id": "w1",
+            "title": "A paper",
+            "publication_year": 2020,
+            "concepts": [
+                {"id": "c0", "display_name": "Computer science", "level": 0, "score": 0.9},
+                {"id": "c2", "display_name": "Machine learning", "level": 2, "score": 0.5},
+                {"id": "c3", "display_name": "Deep learning", "level": 3, "score": 0.4},
+            ],
+        }
+        paper = parse_work(work, top_k=1, min_level=2)
+        self.assertIsNotNone(paper)
+        self.assertEqual(len(paper.concepts), 1)
+        self.assertEqual(paper.concepts[0].id, "c2")
+        self.assertEqual(paper.year, 2020)
+
+    def test_rejects_missing_year(self):
+        work = {"id": "w1", "title": "x", "concepts": [{"id": "c", "display_name": "x", "level": 3}]}
+        self.assertIsNone(parse_work(work))
+
+    def test_rejects_paper_without_usable_concepts(self):
+        work = {
+            "id": "w1",
+            "title": "x",
+            "publication_year": 2020,
+            "concepts": [{"id": "c0", "display_name": "Computer science", "level": 0}],
+        }
+        self.assertIsNone(parse_work(work, min_level=2))
+
+
+if __name__ == "__main__":
+    unittest.main()

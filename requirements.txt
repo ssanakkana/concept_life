@@ -1,0 +1,6 @@
+# M0 只用 Python 标准库，以下依赖从 M1 开始按需安装。
+# requests>=2.31       # 抓取 Acemap / OpenAlex
+# networkx>=3.2        # 共现图、Louvain、链路预测
+# streamlit>=1.30      # 演示界面
+# matplotlib>=3.8      # 静态图
+# pandas>=2.0          # 表格处理
