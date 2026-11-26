@@ -12,11 +12,12 @@
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
 | M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
-| M4 | Streamlit demo、海报、讲稿 | demo 已实现，7 页 smoke test 通过；海报和讲稿未做 |
+| M4 | Streamlit demo、海报、讲稿 | demo 已实现，8 页 smoke test 通过；海报和讲稿未做 |
 | M5 | 生命周期聚类（扩展） | 已实现，5 类，silhouette 0.285 |
 | M6 | 替代复核页（扩展） | 已实现，20/20 标注，precision@10 0.60，precision@20 0.45 |
+| M7 | 生命周期早期预测（扩展） | 已实现，5 折 accuracy 0.656，macro-F1 0.482 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M6 和 demo，海报和讲稿还没有。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M7 和 demo，海报和讲稿还没有。
 
 ## 环境
 
@@ -48,6 +49,7 @@ concept_life/
 │   ├── m2.json               # M2 配置：分析区间和生命周期事件阈值
 │   ├── m3.json               # M3 配置：替代候选和趋势预测窗口
 │   ├── m5.json               # M5 配置：生命周期聚类特征和 k 范围
+│   ├── m7.json               # M7 配置：早期窗口、切分年份、模型参数
 │   ├── golden_cases.json     # 9 个黄金案例的期望年份范围
 │   └── queries.json          # 170 个抓取查询，分 seeds/classic/recent
 ├── docs/
@@ -66,6 +68,7 @@ concept_life/
 │   ├── m3_replacements.py    # M3 候选替代检测，写 replacements.jsonl
 │   ├── m3_trend.py           # M3 趋势预测回测，写 metrics 和预测表
 │   ├── m5_clusters.py        # M5 生命周期聚类，写 clusters CSV 和 summary
+│   ├── m7_early.py           # M7 早期预测，写 metrics 和预测表
 │   ├── evaluate_replacements.py # M6 从人工标签算 precision@k
 │   ├── smoke_demo.py         # M4 七个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
@@ -81,6 +84,7 @@ concept_life/
 │       ├── replace.py        # 共现、Jaccard、Pearson、候选替代
 │       ├── predict.py        # 趋势特征、逻辑回归、precision@k、NDCG
 │       ├── cluster.py        # 形状特征、numpy K-means、silhouette
+│       ├── early.py          # 早期特征、softmax、macro-F1、混淆矩阵
 │       ├── dashboard.py      # demo 的只读数据加载
 │       └── app.py            # Streamlit 五页界面
 ├── tests/
@@ -91,6 +95,7 @@ concept_life/
 │   ├── test_replace.py       # Pearson、Jaccard、合成替代对
 │   ├── test_predict.py       # 指标、未来信息不泄漏
 │   ├── test_cluster.py       # K-means、silhouette、flash 特征
+│   ├── test_early.py         # 早期特征不读未来、softmax、macro-F1
 │   └── test_dashboard.py     # 时间线补年、概念排序、事件统计
 ├── data/
 │   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
@@ -130,10 +135,13 @@ concept_life/
 | `cluster.py` | 形状特征、numpy K-means、silhouette、规则标签 | 不把 total_count 或绝对年份放进聚类 |
 | `m5_clusters.py` | 读序列和事件，写聚类 CSV 和 summary | 不做早期分类预测 |
 | `m5.json` | M5 聚类特征阈值和 k 范围 | 不改变 M2 的事件规则 |
+| `early.py` | 早期特征、softmax、macro-F1、混淆矩阵 | 不用 birth+2 之后的年份 |
+| `m7_early.py` | 5 折和出生年份切分，写 metrics 和预测表 | 不把聚类标签当现实金标 |
+| `m7.json` | M7 早期窗口、切分年份、模型参数 | 不改变 M5 聚类标签 |
 | `dashboard.py` | demo 的只读数据加载、复核标签合并和 precision 计算 | 不写原始数据，不调 API |
 | `app.py` | Streamlit 七页界面，含替代复核和保存 | 不做模型训练 |
 | `evaluate_replacements.py` | 从 `replacement_review.csv` 算 precision@10/20 | 不替人做判断 |
-| `smoke_demo.py` | 用 AppTest 执行七个页面 | 不做视觉回归 |
+| `smoke_demo.py` | 用 AppTest 执行八个页面 | 不做视觉回归 |
 
 ## 数据流
 
@@ -371,11 +379,12 @@ uv run streamlit run src/concept_life/app.py
 
 demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run python scripts/m5_clusters.py`，否则会提示缺少 `lifecycle_clusters.csv`。
 
-七个页面：
+八个页面：
 
 - 总览：42,460 篇论文、10,957 个概念、3,003 个事件、30 个替代候选；年份直方图和事件分布。
 - 概念时间线：选择概念，看 share 曲线和事件虚线，下面是事件表和证据。
 - 生命周期类型：五类概念的柱状图、peak position × decline speed 散点、按类型看 top 30。
+- 早期预测：只用前三年特征预测五类，同分布 5 折和出生年份切分，混淆矩阵和测试例子。
 - 上升与替代：上升榜、候选替代表、人工复核表。
 - 替代复核：逐对看时间线，标是/否/不确定，保存后算 precision。
 - 趋势回测：模型和三条基线的指标，2020 窗口的预测表。
@@ -387,7 +396,24 @@ demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run 
 uv run python scripts/smoke_demo.py
 ```
 
-预期七个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
+预期八个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
+
+## M7 生命周期早期预测（扩展）
+
+用出生后前三年的信号预测 M5 的五类生命周期。
+
+```bash
+uv run python scripts/m7_early.py
+```
+
+产物：
+
+- `runs/m7/early_metrics.json`：5 折、时间切分、混淆矩阵、按类指标。
+- `data/processed/early_predictions.csv`：2013-2018 出生概念的测试预测。
+
+本次结果：1,333 个概念。同分布 5 折 accuracy 0.656、macro-F1 0.482，多数类 0.476；按出生年份切分，训练 ≤2012 共 365 个、测试 2013-2018 共 968 个，accuracy 0.666、macro-F1 0.455，多数类只有 0.073。昙花一现 F1 0.78，新兴型召回 0.35，复活型测试只有 4 个。
+
+特征是 birth 到 birth+2 的 11 个早期指标，标签是 M5 的全轨迹聚类类型。时间切分是压力测试：晚出生概念的观察窗口更短，测试集类别分布偏向昙花一现和新兴型，所以 macro-F1 和按类 support 比 accuracy 更重要。类型标签是描述性的，不是现实命运，见 `D-023`、`D-024`。
 
 ## 产物格式
 
@@ -458,7 +484,7 @@ uv run python scripts/smoke_demo.py
 uv run python -m unittest discover -s tests -v
 ```
 
-`uv run python -m unittest discover -s tests -v` 预期 27 个测试全部通过。直接用系统 Python 跑时，4 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
+`uv run python -m unittest discover -s tests -v` 预期 30 个测试全部通过。直接用系统 Python 跑时，4 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -473,6 +499,7 @@ uv run python -m unittest discover -s tests -v
 - precision@k、NDCG、趋势特征不读未来年份。
 - 时间线补年、概念按总量排序、事件统计。
 - K-means 分簇、silhouette、flash 特征。
+- 早期特征不读未来年份、softmax 能学、macro-F1。
 - 替代复核 precision 只算已标注行，未标注不计入分母。
 
 ## 如何扩展
@@ -503,7 +530,8 @@ uv run python -m unittest discover -s tests -v
 - 趋势预测的绝对精度不高，模型 precision@10 0.200，高于 growth 和 random 但远不到可靠预测。标签定义会改变结论，绝对增长下 frequency 基线很强，见 `D-014`。
 - 趋势特征一度用全语料共现图，泄漏未来信息；现在每个窗口只用 T 年以前的图，见 `P-030`、`D-016`。
 - 生命周期聚类只用形状特征，类型名是描述性的，不是金标。没有出现“常青型”，复活型只有 37 个且事件有噪声，见 `D-020`、`P-038`。
-- demo 已实现，见 M4 和 M5；海报和两分钟讲稿还没做。
+- 早期预测的标签是 M5 聚类类型，不是现实成败。时间切分里类别分布漂移严重，复活型测试只有 4 个，按类指标不稳定，见 `D-024`、`P-047`、`P-048`。
+- demo 已实现，见 M4 到 M7；海报和两分钟讲稿还没做。
 
 ## 文档索引
 

@@ -22,7 +22,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | I-001 | 概念演化卡片与时间线 | 展示层，复用事件表 | 无 | 0.5 天 | P1 | done |
 | I-002 | 趋势预测：下一阶段上升概念 | 时序排序/分类 | 无 | 1 天 | P0 | done |
-| I-003 | 生命周期聚类与早期预测 | 聚类 + 分类 | 无 | 1 天 | P1 | done（聚类，早期预测未做） |
+| I-003 | 生命周期聚类与早期预测 | 聚类 + 分类 | 无 | 1 天 | P1 | done（聚类 + 早期预测） |
 | I-004 | 候选替代检测 | 时序相关 + 语义相似度 | 无 | 1 天 | P0 | done（候选生成） |
 | I-005 | Citation 概念脉络与学习路径 | 有向图路径挖掘 + 推荐 | OpenAlex 或 Semantic Scholar | 1 到 2 天 | P3 | backlog |
 | I-006 | 时序共现脉络，无引用边 | 路径挖掘 | 无 | 1 天 | P2 | backlog |
@@ -38,7 +38,7 @@
 
 P0 是核心，先做；P1 是强加分；P2 是锦上添花；P3 只有时间富余才做。
 
-已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核标签在 `data/labels/replacement_review.csv`。20 对标完，采用“焦点转移”标准，9 对有效，precision@10 0.60、precision@20 0.45；11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认。I-012 交互式研究地图还没有做，demo 目前是时间线、聚类散点和表格，不是节点图。
+已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-003 的早期预测在 M7 落地，见 `src/concept_life/early.py`、`scripts/m7_early.py`、`data/processed/early_predictions.csv` 和 demo 的“早期预测”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核标签在 `data/labels/replacement_review.csv`。20 对标完，采用“焦点转移”标准，9 对有效，precision@10 0.60、precision@20 0.45；11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认。I-012 交互式研究地图还没有做，demo 目前是时间线、聚类散点和表格，不是节点图。
 
 ## I-001 概念演化卡片与时间线
 

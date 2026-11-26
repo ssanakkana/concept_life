@@ -26,6 +26,8 @@ from concept_life.dashboard import (  # noqa: E402
     concept_options,
     event_counts,
     load_clusters,
+    load_early_metrics,
+    load_early_predictions,
     load_events,
     load_predictions,
     load_replacements,
@@ -65,6 +67,7 @@ def require_artifacts() -> None:
                 "uv run python scripts/m3_replacements.py",
                 "uv run python scripts/m3_trend.py",
                 "uv run python scripts/m5_clusters.py",
+                "uv run python scripts/m7_early.py",
             ]
         ),
         language="bash",
@@ -250,6 +253,103 @@ def page_lifecycle() -> None:
     )
     st.caption(
         "类型名是描述性的，不是金标。复活型样本只有 37 个，且复活事件本身有噪声。"
+    )
+
+
+def page_early() -> None:
+    st.title("早期预测")
+    st.caption(
+        "只用出生后前三年的信号，预测 M5 的五类生命周期。"
+        "特征是早期的，标签是全生命周期的；这是一个预测任务，不是聚类描述。"
+    )
+    metrics = load_early_metrics()
+    labels = metrics["labels"]
+    random_cv = metrics["random_cv"]
+    temporal = metrics["temporal"]
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("同分布 accuracy", f"{random_cv['accuracy_mean']:.3f}")
+    col2.metric("同分布 macro-F1", f"{random_cv['macro_f1_mean']:.3f}")
+    col3.metric("按出生年份 accuracy", f"{temporal['accuracy']:.3f}")
+    col4.metric("按出生年份 macro-F1", f"{temporal['macro_f1']:.3f}")
+
+    comparison = pd.DataFrame(
+        [
+            {
+                "评估": "同分布 5 折",
+                "模型 accuracy": random_cv["accuracy_mean"],
+                "多数类 accuracy": random_cv["majority_accuracy_mean"],
+                "模型 macro-F1": random_cv["macro_f1_mean"],
+            },
+            {
+                "评估": "按出生年份",
+                "模型 accuracy": temporal["accuracy"],
+                "多数类 accuracy": temporal["majority_accuracy"],
+                "模型 macro-F1": temporal["macro_f1"],
+            },
+        ]
+    )
+    st.dataframe(comparison, hide_index=True, width="stretch")
+    st.caption(
+        f"时间切分：训练出生 ≤2012，{temporal['train_n']} 个概念；"
+        f"测试 2013-2018，{temporal['test_n']} 个概念。"
+    )
+
+    split = st.radio(
+        "混淆矩阵", ["按出生年份", "同分布 5 折"], horizontal=True
+    )
+    matrix = (
+        temporal["confusion"] if split == "按出生年份" else random_cv["confusion"]
+    )
+    frame = pd.DataFrame(matrix, index=labels, columns=labels)
+    frame = frame.reset_index().melt(id_vars="index")
+    frame.columns = ["true", "predicted", "count"]
+    cells = alt.Chart(frame).mark_rect().encode(
+        x=alt.X("predicted:N", sort=labels, title="预测"),
+        y=alt.Y("true:N", sort=labels, title="真实"),
+        color=alt.Color(
+            "count:Q", scale=alt.Scale(scheme="blues"), title="数量"
+        ),
+        tooltip=["true", "predicted", "count"],
+    )
+    text = alt.Chart(frame).mark_text(baseline="middle").encode(
+        x=alt.X("predicted:N", sort=labels),
+        y=alt.Y("true:N", sort=labels),
+        text="count:Q",
+        color=alt.value("black"),
+    )
+    st.altair_chart(cells + text, width="stretch")
+
+    st.subheader("按类指标（按出生年份）")
+    per_class = pd.DataFrame(
+        [{"label": label, **values} for label, values in temporal["per_class"].items()]
+    )
+    st.dataframe(per_class, hide_index=True, width="stretch")
+
+    st.subheader("测试集里的例子")
+    predictions = load_early_predictions()
+    wrong_only = st.checkbox("只看预测错的")
+    if wrong_only:
+        predictions = predictions[
+            predictions["correct"].astype(str).str.lower() == "false"
+        ]
+    st.dataframe(
+        predictions[
+            [
+                "name",
+                "birth_year",
+                "true_label",
+                "predicted_label",
+                "confidence",
+                "correct",
+            ]
+        ].head(30),
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "测试集类别分布严重偏向昙花一现和新兴型，macro-F1 比 accuracy 更能反映真实情况；"
+        "复活型测试样本只有 4 个，按类指标不稳定。类型标签来自 M5 聚类，是描述性的，不是现实命运。"
     )
 
 
@@ -494,6 +594,7 @@ def main() -> None:
             "总览",
             "概念时间线",
             "生命周期类型",
+            "早期预测",
             "上升与替代",
             "替代复核",
             "趋势回测",
@@ -512,6 +613,8 @@ def main() -> None:
         page_timeline(series, events)
     elif page == "生命周期类型":
         page_lifecycle()
+    elif page == "早期预测":
+        page_early()
     elif page == "上升与替代":
         page_rising()
     elif page == "替代复核":

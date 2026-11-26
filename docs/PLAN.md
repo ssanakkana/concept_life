@@ -149,3 +149,24 @@ M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,79
 - [x] 测试
 
 M6 结果：demo 七页 0 异常，27 个测试通过。20 对全部标完，采用“焦点转移”标准，9 对有效：Cryptocurrency→Blockchain、Machine translation→Language model、Machine translation→Transformer、Cryptocurrency→Smart contract、Distributed learning→Federated learning、Query language→SQL、Utility computing→Edge computing、Residual neural network→Pruning、Static analysis→Malware。precision@10 = 0.600，precision@20 = 0.450。11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认全部 20 对，见 `D-022`。
+
+## M7 生命周期早期预测（扩展）
+
+目标：只用出生后前三年的特征，预测 M5 的五类生命周期。
+
+验收：
+
+- 特征只用到 birth 到 birth+2，不碰未来。
+- 同分布 5 折和时间切分两种评估都报告。
+- 混淆矩阵和按类指标可见。
+- 测试覆盖特征不读未来、softmax 能学、macro-F1。
+
+任务：
+
+- [x] 早期特征
+- [x] 5 折 + 出生年份切分
+- [x] softmax + class weight
+- [x] demo 页
+- [x] 测试
+
+M7 结果：1,333 个概念。同分布 5 折 accuracy 0.656 ± 0.022，macro-F1 0.482 ± 0.026，多数类 0.476。按出生年份切分，训练出生 ≤2012 共 365 个，测试 2013-2018 共 968 个，accuracy 0.666，macro-F1 0.455，多数类只有 0.073。昙花一现 F1 0.78，新兴型召回 0.35，复活型测试只有 4 个，按类指标不稳定。见 `D-023`、`D-024`。

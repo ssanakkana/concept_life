@@ -1,0 +1,19 @@
+{
+  "analysis": {
+    "start_year": 1995,
+    "end_year": 2023
+  },
+  "early": {
+    "early_window_years": 3,
+    "min_early_count": 5,
+    "active_min_count": 3,
+    "max_birth_year": 2018,
+    "temporal_train_max_birth": 2012,
+    "temporal_test_max_birth": 2018,
+    "folds": 5,
+    "seed": 42,
+    "l2": 0.01,
+    "lr": 0.1,
+    "epochs": 1500
+  }
+}

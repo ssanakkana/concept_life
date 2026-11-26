@@ -49,3 +49,7 @@
 | P-043 | 人工标签被当成客观金标 | 替代关系本身有歧义，不同人判断会不同 | 海报写标注人数和口径；有条件让两个人独立标，算一致率 | `replacement_review.csv`、`D-021` |
 | P-044 | 9 对最初由 AI 补判，5 对在讨论后改判为 1，却被写成“两个人独立标注” | 用户只能判断 11 对，剩下 9 对由 AI 看曲线和备注判断，讨论后人工确认 | 报告写“1 人 + AI 辅助复核，20 对全部人工确认”，不要包装成双人独立金标 | `data/labels/replacement_review.csv`、`D-022` |
 | P-045 | precision 在不同替代标准下差很多 | 焦点转移标准把 Machine translation→Language model、Residual neural network→Pruning 算 1；严格同功能标准会算 0 | 海报写清楚“焦点转移”标准和标注人；要和别的系统比，先用同一标准重标 | `D-022`、`data/labels/replacement_metrics.json` |
+| P-046 | 早期预测用了未来年份，指标虚高 | 特征窗口如果写成从 birth 到 2023，就把未来泄漏了 | 特征只取 birth 到 birth+2；`tests/test_early.py` 验证未来数据不改变特征 | `early.py`、`tests/test_early.py` |
+| P-047 | 按出生年份切分时，训练集和测试集类别分布差异很大 | M5 标签在晚出生概念上偏向新兴型/昙花一现，观察窗口短 | 同时报告同分布 5 折和时间切分；时间切分写清多数类基线和按类指标 | `D-023`、`runs/m7/early_metrics.json` |
+| P-048 | 复活型按类 F1 很低，看起来像模型坏了 | 时间切分里复活型测试只有 4 个 | 按类指标要写 support；复活型不要单独下结论 | `runs/m7/early_metrics.json` |
+| P-049 | 只报同分布 5 折，不报时间切分 | 同分布 5 折 accuracy 0.656，时间切分 0.666，但两者含义不同 | 两种都报；时间切分是压力测试，不是普通泛化 | `D-023`、`scripts/m7_early.py` |
