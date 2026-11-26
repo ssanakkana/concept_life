@@ -11,6 +11,7 @@ try:
         concept_events,
         concept_options,
         event_counts,
+        review_precision,
         timeline,
     )
 except ImportError:
@@ -40,6 +41,20 @@ class DashboardTest(unittest.TestCase):
         )
         options = concept_options(series, limit=2)
         self.assertEqual([name for _, name in options], ["Big", "Small"])
+
+    def test_review_precision_ignores_unlabeled(self):
+        review = pd.DataFrame(
+            [
+                {"rank": 1, "valid_1_0": 1},
+                {"rank": 2, "valid_1_0": 0},
+                {"rank": 3, "valid_1_0": None},
+                {"rank": 11, "valid_1_0": 1},
+            ]
+        )
+        metrics = review_precision(review, 10)
+        self.assertEqual(metrics["labeled"], 2)
+        self.assertEqual(metrics["total"], 3)
+        self.assertAlmostEqual(metrics["precision"], 0.5)
 
     def test_event_counts_and_filter(self):
         events = pd.DataFrame(

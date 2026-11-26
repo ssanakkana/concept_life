@@ -101,13 +101,13 @@ M3 结果：替代检测给出 30 个候选对，Machine translation→Transform
 
 任务：
 
-- [x] demo，六个页面，uv 环境，AppTest 冒烟 0 异常
+- [x] demo，七个页面，uv 环境，AppTest 冒烟 0 异常
 - [ ] 海报
 - [ ] 讲稿
 - [ ] AI 使用说明
 - [ ] 提交材料
 
-M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_life/app.py` 启动。六个页面是总览、概念时间线、生命周期类型、上升与替代、趋势回测、数据与方法。`uv run python scripts/smoke_demo.py` 全部 0 异常。海报和两分钟讲稿还没做。
+M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_life/app.py` 启动。七个页面是总览、概念时间线、生命周期类型、上升与替代、替代复核、趋势回测、数据与方法。`uv run python scripts/smoke_demo.py` 全部 0 异常。海报和两分钟讲稿还没做。
 
 ## M5 生命周期聚类（扩展）
 
@@ -128,4 +128,24 @@ M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_li
 - [x] demo 页面
 - [x] 测试
 
-M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,791 个概念。昙花一现 781，新兴型 465，衰退型 331，爆发后衰退 177，复活型 37。26 个测试通过，demo 六页 0 异常。
+M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,791 个概念。昙花一现 781，新兴型 465，衰退型 331，爆发后衰退 177，复活型 37。M5 完成时 26 个测试、demo 六页；M6 加了替代复核页，现在是七页、27 个测试。
+
+## M6 替代复核页（扩展）
+
+目标：在 demo 里逐对标注候选替代，保存到 CSV，并计算 precision@10 和 precision@20。
+
+验收：
+
+- 页面显示旧概念和新概念的两条时间线，以及 Jaccard、相关系数、峰值年。
+- 可以选“是 / 否 / 不确定”并写备注。
+- 保存后 CSV 更新，指标刷新。
+- 单独的评估脚本能从 CSV 算 precision@k。
+
+任务：
+
+- [x] 页面和保存
+- [x] `load_review` 和 `review_precision`
+- [x] `scripts/evaluate_replacements.py`
+- [x] 测试
+
+M6 结果：demo 七页 0 异常，27 个测试通过。当前标签 0/20，等人逐对标；标完后 `uv run python scripts/evaluate_replacements.py` 输出 precision@10 和 precision@20。

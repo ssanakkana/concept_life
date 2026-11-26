@@ -12,10 +12,11 @@
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
 | M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
 | M3 | 候选替代检测、趋势预测 | 已实现，趋势 precision@10 0.20，替代候选 30 对 |
-| M4 | Streamlit demo、海报、讲稿 | demo 已实现，6 页 smoke test 通过；海报和讲稿未做 |
+| M4 | Streamlit demo、海报、讲稿 | demo 已实现，7 页 smoke test 通过；海报和讲稿未做 |
 | M5 | 生命周期聚类（扩展） | 已实现，5 类，silhouette 0.285 |
+| M6 | 替代复核页（扩展） | 已实现，7 页 demo，precision 待人工标注 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M5 和 demo，海报和讲稿还没有。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M6 和 demo，海报和讲稿还没有。
 
 ## 环境
 
@@ -65,7 +66,8 @@ concept_life/
 │   ├── m3_replacements.py    # M3 候选替代检测，写 replacements.jsonl
 │   ├── m3_trend.py           # M3 趋势预测回测，写 metrics 和预测表
 │   ├── m5_clusters.py        # M5 生命周期聚类，写 clusters CSV 和 summary
-│   ├── smoke_demo.py         # M4 六个 Streamlit 页面的冒烟测试
+│   ├── evaluate_replacements.py # M6 从人工标签算 precision@k
+│   ├── smoke_demo.py         # M4 七个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
 ├── src/
 │   └── concept_life/
@@ -128,9 +130,10 @@ concept_life/
 | `cluster.py` | 形状特征、numpy K-means、silhouette、规则标签 | 不把 total_count 或绝对年份放进聚类 |
 | `m5_clusters.py` | 读序列和事件，写聚类 CSV 和 summary | 不做早期分类预测 |
 | `m5.json` | M5 聚类特征阈值和 k 范围 | 不改变 M2 的事件规则 |
-| `dashboard.py` | demo 的只读数据加载和 DataFrame 变换 | 不写数据，不调 API |
-| `app.py` | Streamlit 六页界面 | 不做计算，只展示标准产物 |
-| `smoke_demo.py` | 用 AppTest 执行六个页面 | 不做视觉回归 |
+| `dashboard.py` | demo 的只读数据加载、复核标签合并和 precision 计算 | 不写原始数据，不调 API |
+| `app.py` | Streamlit 七页界面，含替代复核和保存 | 不做模型训练 |
+| `evaluate_replacements.py` | 从 `replacement_review.csv` 算 precision@10/20 | 不替人做判断 |
+| `smoke_demo.py` | 用 AppTest 执行七个页面 | 不做视觉回归 |
 
 ## 数据流
 
@@ -307,6 +310,14 @@ uv run python scripts/m3_replacements.py
 
 本次结果：234 个衰退概念、523 个上升概念、52,349 个共现对、30 个候选对。前十里有 Machine translation→Transformer、Distributed learning→Federated learning 等合理对，也有 Pascal、Workload、Java 这种标签噪声。共现相似度偏向互补概念，RNN→Transformer 因为直接共现太少被漏掉，所以这是候选生成，不是自动替代。
 
+人工复核在 demo 的“替代复核”页做。逐对看旧概念和新概念的时间线，标“是 / 否 / 不确定”，保存回 `runs/m3/replacement_review.csv`。标完运行：
+
+```bash
+uv run python scripts/evaluate_replacements.py
+```
+
+输出 precision@10 和 precision@20。未标注和“不确定”不计入分母，页面会显示“已标注 X/10”；top-10 没标完时，不要把部分标注的 precision 当成完整 top-10 精确率。
+
 趋势预测读同样的数据，做三窗口回测：
 
 ```bash
@@ -357,12 +368,13 @@ uv run streamlit run src/concept_life/app.py
 
 demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run python scripts/m5_clusters.py`，否则会提示缺少 `lifecycle_clusters.csv`。
 
-六个页面：
+七个页面：
 
 - 总览：42,460 篇论文、10,957 个概念、3,003 个事件、30 个替代候选；年份直方图和事件分布。
 - 概念时间线：选择概念，看 share 曲线和事件虚线，下面是事件表和证据。
 - 生命周期类型：五类概念的柱状图、peak position × decline speed 散点、按类型看 top 30。
 - 上升与替代：上升榜、候选替代表、人工复核表。
+- 替代复核：逐对看时间线，标是/否/不确定，保存后算 precision。
 - 趋势回测：模型和三条基线的指标，2020 窗口的预测表。
 - 数据与方法：数据来源、方法、局限。
 
@@ -372,7 +384,7 @@ demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run 
 uv run python scripts/smoke_demo.py
 ```
 
-预期六个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
+预期七个页面各 0 异常。`streamlit.testing.v1.AppTest` 会真正执行页面代码，不只是检查服务器端口。
 
 ## 产物格式
 
@@ -443,7 +455,7 @@ uv run python scripts/smoke_demo.py
 uv run python -m unittest discover -s tests -v
 ```
 
-`uv run python -m unittest discover -s tests -v` 预期 26 个测试全部通过。直接用系统 Python 跑时，3 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
+`uv run python -m unittest discover -s tests -v` 预期 27 个测试全部通过。直接用系统 Python 跑时，4 个 dashboard 测试会 skip，因为 pandas 只在 uv 环境里。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -458,6 +470,7 @@ uv run python -m unittest discover -s tests -v
 - precision@k、NDCG、趋势特征不读未来年份。
 - 时间线补年、概念按总量排序、事件统计。
 - K-means 分簇、silhouette、flash 特征。
+- 替代复核 precision 只算已标注行，未标注不计入分母。
 
 ## 如何扩展
 
@@ -482,6 +495,7 @@ uv run python -m unittest discover -s tests -v
 - 生命周期事件是规则驱动的，泛概念仍然会产生事件，比如 `Implementation`、`Citation`、`Path (computing)`。案例和海报只用黄金案例和人工挑过的概念，见 `P-029`。
 - 早期年份论文少，`min_year_total=100` 只让峰值和爆发在语料足够大的年份计算，见 `P-027`。
 - 替代检测是候选生成，不是自动替代。共现相似度偏向互补概念，RNN→Transformer 被漏掉，需要 citation 或文本信号，见 `P-031`、`I-005`。
+- 替代 precision 依赖人工标注，标签是主观判断，未标注和“不确定”不计入分母。top-10 没标完时，不要把部分标注的 precision 当成完整精确率，见 `P-041`、`D-021`。
 - 趋势预测的绝对精度不高，模型 precision@10 0.200，高于 growth 和 random 但远不到可靠预测。标签定义会改变结论，绝对增长下 frequency 基线很强，见 `D-014`。
 - 趋势特征一度用全语料共现图，泄漏未来信息；现在每个窗口只用 T 年以前的图，见 `P-030`、`D-016`。
 - 生命周期聚类只用形状特征，类型名是描述性的，不是金标。没有出现“常青型”，复活型只有 37 个且事件有噪声，见 `D-020`、`P-038`。

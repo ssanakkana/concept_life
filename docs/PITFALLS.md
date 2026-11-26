@@ -44,3 +44,6 @@
 | P-038 | “衰退型”里有很多成熟概念，看起来像领域死了 | 语料在增长，成熟概念的 share 也会自然下降 | 类型名是语料内份额形状，不是领域健康度；海报要写清楚 | `scripts/m5_clusters.py`、`D-020` |
 | P-039 | 直接按 cluster index 叫“类型 0”“类型 1” | K-means 的编号是随机的，换 seed 就变 | 用 centroid 规则命名，并保证名字唯一 | `cluster.py` |
 | P-040 | 聚类集合 1,837 个概念，事件集合 1,793 个 | total 把 1995 年以前的论文也算进去了 | total 只在分析区间内计数，和 M2 对齐 | `cluster.py` |
+| P-041 | 替代复核页的 precision 只在已标注行上算，top-10 没标完时会偏高或偏低 | 未标注和“不确定”不计入分母 | 页面显示“已标注 X/10”；海报上写清楚分母，不要把它当成完整 top-10 精确率 | `dashboard.py`、`app.py` |
+| P-042 | 保存复核后 `replacement_review.csv` 的列变多 | 页面把完整候选字段写回 CSV | `load_review` 只按 rank 取 valid 和 notes；不要改 rank 或重排文件 | `dashboard.py`、`scripts/evaluate_replacements.py` |
+| P-043 | 人工标签被当成客观金标 | 替代关系本身有歧义，不同人判断会不同 | 海报写标注人数和口径；有条件让两个人独立标，算一致率 | `replacement_review.csv`、`D-021` |

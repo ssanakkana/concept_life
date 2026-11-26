@@ -30,6 +30,7 @@
 | W-20261126-05 | 2026-11-26 | M3 替代候选与趋势预测 | 完成，a568409 |
 | W-20261126-06 | 2026-11-26 | M4 Streamlit demo 与 uv 环境 | 完成，33e9755 |
 | W-20261126-07 | 2026-11-26 | M5 生命周期聚类与 demo 页面 | 完成，9a12cbb |
+| W-20261126-08 | 2026-11-26 | M6 替代复核页与 precision 评估 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -422,3 +423,46 @@ uv run python scripts/smoke_demo.py
 - 输出采纳/拒绝：采纳“形状特征、K-means、silhouette 选 k、规则命名”的方案；没有把 total_count 或绝对年份放进聚类特征，避免按大小或年代分簇。
 
 **Commit**：9a12cbb
+
+## W-20261126-08 · 2026-11-26 · 会话 01（续）
+
+**目标**：做替代候选人工复核页，让队友在 demo 里标 1/0/不确定，并算 precision@10/20。
+
+**做了什么**：
+
+- `dashboard.py` 增加 `load_review` 和 `review_precision`：按 rank 合并 `replacements.csv` 和 `replacement_review.csv`，只对已标注行算精确率。
+- `app.py` 增加“替代复核”页：候选选择、上一对/下一对、两条时间线、Jaccard 和相关系数、是/否/不确定、备注、保存。
+- 新增 `scripts/evaluate_replacements.py`：从 CSV 算 precision@10 和 precision@20，写 `runs/m3/replacement_metrics.json`。
+- `tests/test_dashboard.py` 增加未标注行不计入分母的测试，测试从 26 个增加到 27 个。
+- `scripts/smoke_demo.py` 覆盖七个页面。
+
+**命令**：
+
+```bash
+uv run python -m unittest discover -s tests -v
+uv run python scripts/smoke_demo.py
+uv run python scripts/evaluate_replacements.py
+```
+
+**结果**：
+
+- 27 个测试通过。
+- demo 七页 0 异常。
+- 当前标签 0/20，等队友逐对标；`evaluate_replacements.py` 能正常输出“no labels”。
+
+**踩坑**：
+
+- 页面的 precision 只在已标注行上算。如果 top-10 只标了 3 个，precision 是 3 个里的比例，不是 top-10 的精确率。页面上写了“已标注 X/10”。
+- 页面保存时会把完整的候选字段写回 `replacement_review.csv`，文件 schema 比以前宽。`load_review` 只取 rank、valid、notes，所以不影响。
+- 标签是人工判断，不是模型输出；海报上要写清楚标注人数和口径。
+
+**下一步**：
+
+- 让队友花十分钟把 20 对标完，跑 `evaluate_replacements.py`。
+- 最后统一做海报和两分钟讲稿。
+
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户问“替代候选人工标注页是什么意思”，解释后说“不错挺好的，继续推进”。
+- 输出采纳/拒绝：采纳“demo 内标注 + CSV 保存 + 单独评估脚本”的方案；没有引入新的标注平台或数据库。

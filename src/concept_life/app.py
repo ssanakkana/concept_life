@@ -28,9 +28,11 @@ from concept_life.dashboard import (  # noqa: E402
     load_events,
     load_predictions,
     load_replacements,
+    load_review,
     load_rising,
     load_series,
     load_summaries,
+    review_precision,
     timeline,
 )
 
@@ -250,6 +252,128 @@ def page_lifecycle() -> None:
     )
 
 
+def page_review(series: pd.DataFrame) -> None:
+    st.title("替代复核")
+    st.caption(
+        "算法只生成候选，是否真的替代由人判断。标注结果写回 "
+        "runs/m3/replacement_review.csv。"
+    )
+    review = load_review()
+    if review.empty:
+        st.info("没有候选。先跑 scripts/m3_replacements.py。")
+        return
+
+    ranks = [int(value) for value in review["rank"]]
+    if "review_rank" not in st.session_state or st.session_state.review_rank not in ranks:
+        st.session_state.review_rank = ranks[0]
+
+    def previous_pair() -> None:
+        index = ranks.index(int(st.session_state.review_rank))
+        st.session_state.review_rank = ranks[max(0, index - 1)]
+
+    def next_pair() -> None:
+        index = ranks.index(int(st.session_state.review_rank))
+        st.session_state.review_rank = ranks[min(len(ranks) - 1, index + 1)]
+
+    col1, col2, _ = st.columns([1, 1, 4])
+    col1.button("上一对", on_click=previous_pair)
+    col2.button("下一对", on_click=next_pair)
+
+    rank = st.selectbox("选择候选", ranks, key="review_rank")
+    row = review[review["rank"] == rank].iloc[0]
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("旧概念峰值", int(row["old_peak_year"]))
+    col2.metric("新概念上升年", int(row["new_year"]))
+    col3.metric("Jaccard", f"{row['jaccard']:.3f}")
+    col4.metric("相关系数", f"{row['correlation']:.3f}")
+    st.markdown(f"**{row['old_name']} → {row['new_name']}**")
+
+    old = timeline(series, row["old_id"])
+    old["concept"] = row["old_name"]
+    new = timeline(series, row["new_id"])
+    new["concept"] = row["new_name"]
+    combined = pd.concat(
+        [old[["year", "share", "concept"]], new[["year", "share", "concept"]]]
+    )
+    chart = alt.Chart(combined).mark_line(point=True).encode(
+        x=alt.X("year:Q", title="年份"),
+        y=alt.Y("share:Q", title="占当年论文比例", axis=alt.Axis(format="%")),
+        color=alt.Color("concept:N", title="概念"),
+        tooltip=[
+            alt.Tooltip("concept:N", title="概念"),
+            alt.Tooltip("year:Q", title="年份"),
+            alt.Tooltip("share:Q", title="占比", format=".4%"),
+        ],
+    )
+    st.altair_chart(chart, width="stretch")
+
+    label_key = f"review_label_{rank}"
+    notes_key = f"review_notes_{rank}"
+    if label_key not in st.session_state:
+        current = row["valid_1_0"]
+        st.session_state[label_key] = (
+            -1 if current is None or pd.isna(current) else int(current)
+        )
+    if notes_key not in st.session_state:
+        st.session_state[notes_key] = str(row["notes"])
+
+    choice = st.radio(
+        "这是替代吗？",
+        options=[1, 0, -1],
+        format_func=lambda value: {1: "是", 0: "否", -1: "不确定"}[value],
+        key=label_key,
+        horizontal=True,
+    )
+    st.text_area("备注", key=notes_key)
+
+    if st.button("保存这一对", type="primary"):
+        value = st.session_state[label_key]
+        review.loc[review["rank"] == rank, "valid_1_0"] = (
+            "" if value == -1 else value
+        )
+        review.loc[review["rank"] == rank, "notes"] = st.session_state[notes_key]
+        review.to_csv(
+            RUNS_DIR / "m3" / "replacement_review.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        st.success("已保存")
+        st.rerun()
+
+    st.divider()
+    labeled = int(review["valid_1_0"].notna().sum())
+    st.subheader("标注进度与指标")
+    st.write(f"已标注 {labeled}/{len(review)}")
+    for k in (10, 20):
+        metrics = review_precision(review, k)
+        if metrics["precision"] is None:
+            st.write(f"precision@{k}：还没有标注")
+        else:
+            st.write(
+                f"precision@{k}：{metrics['precision']:.2f}，"
+                f"已标注 {metrics['labeled']}/{metrics['total']}"
+            )
+    st.caption("未标注或“不确定”不计入 precision 分母。建议把 top-10 全部标完再看指标。")
+
+    st.subheader("全部候选")
+    st.dataframe(
+        review[
+            [
+                "rank",
+                "old_name",
+                "new_name",
+                "jaccard",
+                "correlation",
+                "valid_1_0",
+                "notes",
+            ]
+        ],
+        hide_index=True,
+        width="stretch",
+    )
+
+
 def page_rising() -> None:
     st.title("上升与替代")
     st.subheader("上升概念")
@@ -367,7 +491,15 @@ def main() -> None:
 
     page = st.sidebar.radio(
         "页面",
-        ["总览", "概念时间线", "生命周期类型", "上升与替代", "趋势回测", "数据与方法"],
+        [
+            "总览",
+            "概念时间线",
+            "生命周期类型",
+            "上升与替代",
+            "替代复核",
+            "趋势回测",
+            "数据与方法",
+        ],
     )
     st.sidebar.divider()
     st.sidebar.caption(f"论文 {summaries['m1']['papers']:,} 篇")
@@ -383,6 +515,8 @@ def main() -> None:
         page_lifecycle()
     elif page == "上升与替代":
         page_rising()
+    elif page == "替代复核":
+        page_review(series)
     elif page == "趋势回测":
         page_trend(summaries)
     else:

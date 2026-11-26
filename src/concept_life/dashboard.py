@@ -52,6 +52,54 @@ def load_clusters(path: Path | None = None) -> pd.DataFrame:
     return load_csv(path or DATA_DIR / "lifecycle_clusters.csv")
 
 
+def _normalize_label(value: object) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, float) and pd.isna(value):
+        return None
+    text = str(value).strip()
+    if text in {"1", "1.0", "True", "true"}:
+        return 1
+    if text in {"0", "0.0", "False", "false"}:
+        return 0
+    return None
+
+
+def load_review(
+    replacements_path: Path | None = None,
+    review_path: Path | None = None,
+    limit: int = 20,
+) -> pd.DataFrame:
+    """Merge replacement candidates with human labels by rank."""
+    replacements = load_replacements(replacements_path)
+    review_path = review_path or RUNS_DIR / "m3" / "replacement_review.csv"
+    if review_path.exists():
+        review = pd.read_csv(review_path, encoding="utf-8-sig")
+        keep = review[["rank", "valid_1_0", "notes"]].copy()
+        replacements = replacements.merge(keep, on="rank", how="left")
+    else:
+        replacements["valid_1_0"] = None
+        replacements["notes"] = ""
+    replacements = replacements[replacements["rank"] <= limit].copy()
+    replacements["valid_1_0"] = replacements["valid_1_0"].apply(_normalize_label)
+    replacements["notes"] = replacements["notes"].fillna("").astype(str)
+    return replacements
+
+
+def review_precision(review: pd.DataFrame, k: int) -> dict[str, object]:
+    """Precision over labeled rows only, for the top-k candidates."""
+    subset = review[review["rank"] <= k]
+    labeled = subset[subset["valid_1_0"].notna()]
+    if labeled.empty:
+        return {"k": k, "labeled": 0, "total": len(subset), "precision": None}
+    return {
+        "k": k,
+        "labeled": len(labeled),
+        "total": len(subset),
+        "precision": float(labeled["valid_1_0"].sum() / len(labeled)),
+    }
+
+
 def load_events(path: Path | None = None) -> pd.DataFrame:
     path = require(path or DATA_DIR / "events.jsonl")
     rows = [
