@@ -212,12 +212,12 @@
 
 **后果**：不依赖外部服务，标注过程可演示。标签是人工判断，不是模型输出；海报要写标注人数和口径，最好两个人独立标再算一致率。
 
-## D-022 替代判定用宽泛接替标准，9 对由 AI 第二判断
+## D-022 替代判定用焦点转移标准，5 对在讨论后改判
 
-**背景**：20 对候选里，用户能判断 11 对，剩下 9 对无法判断。替代本身有多种标准：严格同功能替换、宽泛接替、焦点转移。不同标准会显著改变 precision。
+**背景**：20 对候选里，用户能判断 11 对，剩下 9 对无法判断。用户明确表示“焦点转移就是替代，焦点转移才是我们想要挖掘的东西”。不同标准会显著改变 precision，必须先固定口径。
 
-**决定**：采用宽泛接替标准。新概念在同一研究生态位里接替旧概念的关注度，包括具体化、平台化或焦点转移，记 1；互补关系、父子组件、概念标签噪声记 0。用户标了 11 对，AI 按同一标准补标 9 对。AI 标签不是人类金标，报告里写“1 人 + AI 第二判断”，不要写成“两个人独立标注”。
+**决定**：采用焦点转移标准。新概念在同一研究生态位里接住旧概念的关注度，包括具体化、平台化、下一代范式或焦点转移，记 1；互补关系、泛化父类、组件、跨领域和概念标签噪声记 0。11 对由人初判，9 对由 AI 补判；讨论后 5 对改判为 1：Machine translation→Language model、Machine translation→Transformer、Cryptocurrency→Smart contract、Residual neural network→Pruning、Static analysis→Malware。最终 20 对由人工确认。报告写“1 人 + AI 辅助复核”。
 
 **备选**：严格同功能替换；两个人独立标注并算一致率；LLM 先标再人工复核。
 
-**后果**：当前 4/20 有效，precision@10 0.30，precision@20 0.20。换成严格同功能标准，Cryptocurrency→Blockchain、Query language→SQL 这类要改判 0，precision 会降到 0.10 左右。海报必须写标准和标注人。
+**后果**：9/20 有效，precision@10 0.60，precision@20 0.45。换成严格同功能标准，Cryptocurrency→Blockchain、Query language→SQL、Machine translation→Language model 这类要改判 0，precision 会明显下降。海报必须写标准和标注人。

@@ -32,6 +32,7 @@
 | W-20261126-07 | 2026-11-26 | M5 生命周期聚类与 demo 页面 | 完成，9a12cbb |
 | W-20261126-08 | 2026-11-26 | M6 替代复核页与 precision 评估 | 完成，1942441 |
 | W-20261126-09 | 2026-11-26 | 替代候选 20 对标注与 precision 结果 | 完成，fa7ce82 |
+| W-20261126-10 | 2026-11-26 | 焦点转移标准合并与重算 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -518,3 +519,44 @@ uv run python scripts/evaluate_replacements.py --out data/labels/replacement_met
 - 输出采纳/拒绝：采纳“宽泛接替”标准补标 9 对；没有改用户已标的 11 对；在文档里明确 9 对是 AI 第二判断，不是人类金标。
 
 **Commit**：fa7ce82
+
+## W-20261126-10 · 2026-11-26 · 会话 01（续）
+
+**目标**：按用户确认的“焦点转移”标准合并替代标签，重算 precision。
+
+**做了什么**：
+
+- 用户同意 5 个改判：rank 4、5、7、13、18 改为 1。
+- 把 proposal 合并进 `data/labels/replacement_review.csv`，保留用户原备注，补全 20 对理由。
+- 重算 `data/labels/replacement_metrics.json`。
+- 更新 README、PLAN、IDEAS、DECISIONS、PITFALLS。
+
+**命令**：
+
+```bash
+uv run python scripts/evaluate_replacements.py --out data/labels/replacement_metrics.json
+uv run python -m unittest discover -s tests -v
+uv run python scripts/smoke_demo.py
+```
+
+**结果**：
+
+- 9/20 有效：rank 1 Cryptocurrency→Blockchain、4 Machine translation→Language model、5 Machine translation→Transformer、7 Cryptocurrency→Smart contract、9 Distributed learning→Federated learning、10 Query language→SQL、11 Utility computing→Edge computing、13 Residual neural network→Pruning、18 Static analysis→Malware。
+- precision@10 = 0.600，precision@20 = 0.450。
+- 27 个测试通过，demo 七页 0 异常。
+
+**踩坑**：
+
+- 标准从“严格/宽泛混合”改成“焦点转移”，precision 从 0.30/0.20 到 0.60/0.45。不是模型变好，是口径变了；海报必须写清楚标准。
+- 9 对最初由 AI 补判，5 对讨论后改判，最终人工确认；报告写“1 人 + AI 辅助复核”，不是双人独立标注。
+- 焦点转移标准偏宽，严格同功能替换会低很多；不要和别的系统直接比。
+
+**下一步**：
+
+- 提交并推送。
+- 最后做海报和两分钟讲稿。
+
+**AI 交互**：
+
+- 关键提示：用户说“同意，我都同意。可以解释就行。”
+- 输出采纳/拒绝：采纳全部 5 个改判；保留用户原备注；在文档里写清标准变化和标注人。

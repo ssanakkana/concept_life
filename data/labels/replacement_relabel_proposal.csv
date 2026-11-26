@@ -1,0 +1,21 @@
+﻿rank,old_name,new_name,current_1_0,proposed_1_0,difference,confidence,current_notes,proposed_notes
+1,Cryptocurrency,Blockchain,1,1,same,high,焦点从加密货币转向底层区块链，宽泛接替；不是严格同义替换,焦点从加密货币转向底层区块链平台，保持 1
+2,Pascal (unit),Segmentation,0,0,same,same,标签噪声：Pascal 是压强单位，和图像分割无关,标签噪声，Pascal 是压强单位，保持 0
+3,Java,Source code,0,0,same,same,Java 是 source code 的一个实例，不是接替,source code 是泛化类别，不是新议程，保持 0
+4,Machine translation,Language model,0,1,change,high,,NLP 研究焦点从机器翻译任务转向通用语言模型，改 1
+5,Machine translation,Transformer,0,1,change,high,,机器翻译的架构焦点转向 Transformer，改 1
+6,Workload,Load balancing (electrical power),0,0,same,same,,电力负载均衡和计算 workload 不同域，保持 0
+7,Cryptocurrency,Smart contract,0,1,change,high,智能合约是区块链上的应用机制，不是加密货币的接替,区块链内部焦点从加密货币转向智能合约，改 1
+8,Mobile edge computing,Enhanced Data Rates for GSM Evolution,0,0,same,same,,EDGE 是通信标准缩写，和移动边缘计算无关，保持 0
+9,Distributed learning,Federated learning,1,1,same,same,联邦学习需要用到分布式架构，我不清楚是不是替代，可能是？,联邦学习是分布式学习的具体化，保持 1
+10,Query language,SQL,1,1,same,same,应该是,SQL 是查询语言的具体实现，保持 1
+11,Utility computing,Edge computing,1,1,same,same,可能是,效用计算到边缘计算的范式接替，保持 1
+12,Shortest path problem,Graph,0,0,same,same,应该是其中一个具体问题,Graph 是泛化父类，不是新议程，保持 0
+13,Residual neural network,Pruning,0,1,change,medium,,视觉研究焦点从网络结构设计转向剪枝/效率，改 1（borderline）
+14,Word (group theory),Language model,0,0,same,same,标签噪声：群论里的 word 和语言模型无关,群论 word 和语言模型无关，保持 0
+15,Machine translation,Voltage,0,0,same,same,,Voltage 是电气概念，标签噪声，保持 0
+16,Search engine,SQL,0,0,same,same,搜索引擎和 SQL 是不同工具，不是接替,搜索引擎和 SQL 是不同工具，保持 0
+17,Genetic algorithm,Selection (genetic algorithm),0,0,same,same,选择算子是遗传算法的一部分，不是接替,选择算子是遗传算法组件，且新概念峰值在 1994，保持 0
+18,Static analysis,Malware,0,1,change,medium,静态分析是方法，恶意软件是对象，不是接替,安全研究焦点从静态分析方法转向恶意软件/检测，改 1（borderline）
+19,Obstacle,Mobile robot,0,0,same,same,,移动机器人是系统，obstacle 是子问题，且新概念 2020 后回落，保持 0
+20,Replication (statistics),Latency (audio),0,0,same,same,标签噪声：统计学的 replication 和音频 latency 无关,统计学 replication 和音频 latency 无关，保持 0

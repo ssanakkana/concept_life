@@ -1,0 +1,64 @@
+{
+  "current": {
+    "precision@10": 0.3,
+    "precision@20": 0.2
+  },
+  "focus_shift": {
+    "precision@10": 0.6,
+    "precision@20": 0.45
+  },
+  "changes": [
+    {
+      "rank": 4,
+      "old_name": "Machine translation",
+      "new_name": "Language model",
+      "current_1_0": 0,
+      "proposed_1_0": 1,
+      "confidence": "high"
+    },
+    {
+      "rank": 5,
+      "old_name": "Machine translation",
+      "new_name": "Transformer",
+      "current_1_0": 0,
+      "proposed_1_0": 1,
+      "confidence": "high"
+    },
+    {
+      "rank": 7,
+      "old_name": "Cryptocurrency",
+      "new_name": "Smart contract",
+      "current_1_0": 0,
+      "proposed_1_0": 1,
+      "confidence": "high"
+    },
+    {
+      "rank": 13,
+      "old_name": "Residual neural network",
+      "new_name": "Pruning",
+      "current_1_0": 0,
+      "proposed_1_0": 1,
+      "confidence": "medium"
+    },
+    {
+      "rank": 18,
+      "old_name": "Static analysis",
+      "new_name": "Malware",
+      "current_1_0": 0,
+      "proposed_1_0": 1,
+      "confidence": "medium"
+    }
+  ],
+  "approved": true,
+  "approved_changes": [
+    4,
+    5,
+    7,
+    13,
+    18
+  ],
+  "final": {
+    "precision@10": 0.6,
+    "precision@20": 0.45
+  }
+}

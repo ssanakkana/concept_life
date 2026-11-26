@@ -148,4 +148,4 @@ M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,79
 - [x] `scripts/evaluate_replacements.py`
 - [x] 测试
 
-M6 结果：demo 七页 0 异常，27 个测试通过。20 对全部标完，4 对有效：Cryptocurrency→Blockchain、Distributed learning→Federated learning、Query language→SQL、Utility computing→Edge computing。precision@10 = 0.300，precision@20 = 0.200。11 对由人判断，9 对由 AI 按“宽泛接替”标准补判，见 `D-022`。
+M6 结果：demo 七页 0 异常，27 个测试通过。20 对全部标完，采用“焦点转移”标准，9 对有效：Cryptocurrency→Blockchain、Machine translation→Language model、Machine translation→Transformer、Cryptocurrency→Smart contract、Distributed learning→Federated learning、Query language→SQL、Utility computing→Edge computing、Residual neural network→Pruning、Static analysis→Malware。precision@10 = 0.600，precision@20 = 0.450。11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认全部 20 对，见 `D-022`。

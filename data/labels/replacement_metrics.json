@@ -5,12 +5,12 @@
     "k": 10,
     "labeled": 10,
     "total": 10,
-    "precision": 0.3
+    "precision": 0.6
   },
   "precision@20": {
     "k": 20,
     "labeled": 20,
     "total": 20,
-    "precision": 0.2
+    "precision": 0.45
   }
 }
