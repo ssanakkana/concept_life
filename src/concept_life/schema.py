@@ -15,6 +15,9 @@ class Concept:
     name: str
     level: int | None
     score: float | None
+    # Cross-source alignment key. Acemap and OpenAlex concepts both expose a
+    # Wikidata URL for many concepts; it is the best merge key when present.
+    wikidata: str | None = None
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class Paper:
     cited_by_count: int | None
     concepts: tuple[Concept, ...]
     fields: tuple[str, ...] = ()
+    source: str = "acemap"
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
@@ -72,12 +76,14 @@ def parse_work(
                 continue
 
         seen.add(concept_id)
+        wikidata = raw.get("wikidata")
         concepts.append(
             Concept(
                 id=str(concept_id),
                 name=str(name),
                 level=level if isinstance(level, int) else None,
                 score=float(score) if isinstance(score, (int, float)) else None,
+                wikidata=str(wikidata) if wikidata else None,
             )
         )
         if len(concepts) >= top_k:
@@ -103,4 +109,5 @@ def parse_work(
         cited_by_count=work.get("cited_by_count"),
         concepts=tuple(concepts),
         fields=tuple(sorted(fields)),
+        source="acemap",
     )

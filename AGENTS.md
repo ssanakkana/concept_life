@@ -9,6 +9,7 @@
 3. `docs/PITFALLS.md`：已知的坑，动手前先看一遍。
 4. `docs/DECISIONS.md`：影响架构和数据协议的决定。
 5. `docs/IDEAS.md`：扩展想法池。找扩展、换方向、或者 PLAN 做完了，再读这个。
+6. `docs/DATA_SOURCES.md`：要接 Acemap 以外的数据源时读。
 
 读完再动手。不要凭记忆假设仓库状态。
 

@@ -26,6 +26,7 @@
 | W-20261126-01 | 2026-11-26 | 仓库脚手架与 M0 | 完成，61a0282 |
 | W-20261126-02 | 2026-11-26 | 想法池与严格 README | 完成，61a0282 |
 | W-20261126-03 | 2026-11-26 | M1 抓取器、领域过滤、质量报告 | 完成，6d89786 |
+| W-20261126-04 | 2026-11-26 | M2 生命周期事件与黄金案例 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -201,6 +202,55 @@ top rising 前十：
 - 进入 M2：先建黄金案例集，再做出生、爆发、峰值、衰退、复活、死亡的事件规则；分析区间按 `D-010` 用 1995-2023。
 
 **Commit**：6d89786
+
+## W-20261126-04 · 2026-11-26 · 会话 01（续）
+
+**目标**：推进 M2：给 42,460 篇语料里的概念打生命周期事件，用黄金案例检查规则是否和常识一致。
+
+**做了什么**：
+
+- 新增 `src/concept_life/mine.py`：基于 share 的六类事件，出生、爆发、峰值、衰退、休眠、复活、死亡。
+- 新增 `scripts/m2_events.py`：读 `concept_series.csv`，输出 `events.jsonl`、`concept_events.csv`、`runs/m2/summary.json`。
+- 新增 `configs/m2.json`：分析区间 1995-2023，阈值和停用规则。
+- 新增 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`：9 个概念、30 条年份检查。
+- 新增 `tests/test_mine.py`：完整生命周期、休眠复活、短序列跳过，测试从 11 个增加到 15 个。
+- `schema.py` 增加 `Paper.source` 和 `Concept.wikidata`，为以后接 OpenAlex 做跨源对齐。
+- 新增 `docs/DATA_SOURCES.md`：接 Acemap 以外数据源的五个步骤、OpenAlex 字段映射、跨源合并规则和常见坑。
+
+**命令**：
+
+```bash
+python scripts/m2_events.py --config configs/m2.json
+python scripts/check_golden_cases.py
+python -m unittest discover -s tests -v
+```
+
+**结果**：
+
+- 10,957 个概念里 1,793 个有事件，共 3,003 个事件。
+- 事件分布：出生 1,793，爆发 508，峰值 367，衰退 234，休眠 49，复活 49，死亡 3。
+- 黄金案例 30/30 通过，覆盖 SVM、RNN、CNN、Deep learning、GAN、Transformer、Federated learning、Knowledge graph、Blockchain。
+- 15 个测试通过。
+- 3 个死亡案例：Ledger（2020）、Distributed ledger（2022）、Service-level agreement（2022）。
+
+**踩坑**：
+
+- 42k 语料里“真正消失”的概念极少，只有 3 个。大多数概念是衰退或休眠，不是死亡。海报上要写“在语料中消失”，不要写“概念死了”。
+- 1990 到 1999 年每年只有 37 到 79 篇论文，小概念的 share 会被放大。加了 `min_year_total=100`，峰值和爆发只在当年语料至少 100 篇时才计算。
+- 平缓序列上的 z-score 会把微小变化判成爆发。加了 `burst_min_delta=0.002` 和 `burst_min_rel=0.2`，要求绝对占比和相对增幅都够大。
+- 泛概念仍然会产生事件，比如 `Implementation`、`Citation`、`Path (computing)`。这是概念级噪声，停用词和别名合并只能缓解，见 `P-029`。
+
+**下一步**：
+
+- 更新 README 的 M2 复现步骤、目录树和已知限制。
+- 提交 M2 commit。
+- M3：候选替代检测和趋势预测。替代检测用负相关加语义相似度，趋势预测用时间切分和 precision@k。
+
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户同意继续推进 M2，并问“如果后面想提取 Acemap 以外的内容应该怎么做”。
+- 输出采纳/拒绝：采纳“先写黄金案例再调规则”的顺序；采纳 `min_year_total`、`burst_min_delta`、`burst_min_rel` 三个数据质量修正；没有引入 citation 数据源，citation 脉络留到 `I-005`。
 
 **AI 交互**：
 

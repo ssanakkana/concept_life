@@ -29,3 +29,7 @@
 | P-023 | 停用词可能把一篇论文的所有概念都过滤掉 | 有些论文只带一个歧义概念 | 概念全被过滤时丢弃该论文，并在报告里记录；不要留下空概念论文 | `ingest.py` |
 | P-024 | 2024 和 2025 论文数断崖式下降，2024 只有 1,481 篇，2025 只有 265 篇 | Acemap 索引滞后，近两年不完整 | 生命周期分析主区间设为 1995-2023，近两年不参与死亡和趋势判断，见 `D-010` | `configs/m1.json`、`mine.py` |
 | P-025 | top rising 里仍有 `Pattern recognition (psychology)`、`Image (mathematics)`、`Feature (linguistics)`、`Voltage`、`Benchmark (surveying)` | Acemap/OpenAlex 的概念标签有歧义，论文级领域过滤管不到概念级标签 | 停用词只能清掉最明显的几个；真正的解法是别名合并或概念级领域分类，见 `I-010`、`I-014` | `configs/m1.json`、`ingest.py` |
+| P-026 | 42k 语料里只有 3 个死亡事件，和“概念会死”的直觉不符 | 语料足够大，泛概念标签每年都能找到几篇论文；完全连续两年零出现很难 | 不要把 death 当成主结论；海报用“在语料中消失”，并同时展示 decline 和 dormancy。见 `D-012` | `mine.py`、`configs/m2.json` |
+| P-027 | 早期年份的小概念出现假峰值，比如 `Implementation` 在 1995 年 share 7.6% | 1990 到 1999 每年只有 37 到 79 篇论文，5 篇就能撑起高占比 | 峰值和爆发只在当年语料至少 `min_year_total=100` 篇时计算 | `mine.py`、`configs/m2.json` |
+| P-028 | 平缓序列上的 z-score 把微小变化判成爆发 | z-score 只看相对波动，不看绝对增幅；小方差序列容易虚高 | 加 `burst_min_delta=0.002` 和 `burst_min_rel=0.2`，要求绝对占比和相对增幅都够大 | `mine.py`、`configs/m2.json` |
+| P-029 | 泛概念仍然产生事件，比如 `Implementation`、`Citation`、`Path (computing)` | 概念级标签噪声，停用词只能清掉最明显的几个 | 事件表保留，但案例和海报只用黄金案例和人工挑过的概念；长期解法是别名合并和概念级领域分类 | `mine.py`、`I-010` |

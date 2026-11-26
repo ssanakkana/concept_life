@@ -61,11 +61,13 @@ M1 结果：67,896 条原始记录，去重和 CS 过滤后 42,460 篇论文、1
 
 任务：
 
-- [ ] 事件规则
-- [ ] 事件检测
-- [ ] 建 8 个黄金案例（Transformer、GAN、Diffusion、GNN、Federated Learning、SVM、MapReduce、Word2Vec），人工标注大致事件年份，作为回归测试和海报素材
-- [ ] 案例检查
-- [ ] 事件可视化
+- [x] 事件规则
+- [x] 事件检测
+- [x] 建 9 个黄金案例（SVM、RNN、CNN、Deep learning、GAN、Transformer、Federated learning、Knowledge graph、Blockchain），人工标注大致事件年份，作为回归测试和海报素材
+- [x] 案例检查，30/30 通过
+- [ ] 事件可视化，留到 M4
+
+M2 结果：1,793 个概念有事件，共 3,003 个事件。出生 1,793，爆发 508，峰值 367，衰退 234，休眠 49，复活 49，死亡 3。死亡很少，因为 42k 语料里概念很少完全消失，见 `D-012`。
 
 ## M3 替代检测与趋势预测
 

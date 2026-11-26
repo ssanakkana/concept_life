@@ -8,5 +8,6 @@
 4. `docs/PITFALLS.md`
 5. `docs/DECISIONS.md`
 6. `docs/IDEAS.md`，找扩展或换方向时读
+7. `docs/DATA_SOURCES.md`，接新数据源时读
 
 不要把规范复制到这里，避免两份不一致。`AGENTS.md` 是唯一事实来源。

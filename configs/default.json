@@ -19,5 +19,25 @@
   "rising": {
     "min_curr_count": 5,
     "top_k": 30
+  },
+  "analysis": {
+    "start_year": 1995,
+    "end_year": 2023
+  },
+  "events": {
+    "min_total_count": 20,
+    "birth_min_count": 1,
+    "active_min_count": 2,
+    "burst_window": 3,
+    "burst_z": 2.0,
+    "burst_min_count": 5,
+    "burst_min_delta": 0.002,
+    "burst_min_rel": 0.2,
+    "min_year_total": 100,
+    "peak_min_count": 5,
+    "decline_ratio": 0.65,
+    "decline_window": 2,
+    "death_gap": 3,
+    "revival_gap": 2
   }
 }

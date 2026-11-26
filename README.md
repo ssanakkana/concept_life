@@ -10,11 +10,11 @@
 | --- | --- | --- |
 | M0 | 从先导缓存到论文表、概念时间线、上升概念榜 | 已实现 |
 | M1 | Acemap 全量抓取、领域过滤、数据质量报告 | 已实现，42,460 篇论文，10,957 个概念 |
-| M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 未实现 |
+| M2 | 生命周期事件：出生、爆发、峰值、衰退、复活、死亡 | 已实现，3,003 个事件，黄金案例 30/30 |
 | M3 | 候选替代检测、趋势预测 | 未实现 |
 | M4 | Streamlit demo、海报、讲稿 | 未实现 |
 
-扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 和 M1 的代码，M2 到 M4 还没有，不要假设它们存在。
+扩展想法和备选方向在 `docs/IDEAS.md`。当前仓库已实现 M0 到 M2 的代码，M3 和 M4 还没有，不要假设它们存在。
 
 ## 环境
 
@@ -35,6 +35,8 @@ concept_life/
 ├── configs/
 │   ├── default.json          # M0 配置：缓存路径、年份、窗口、阈值
 │   ├── m1.json               # M1 配置：全量缓存、CS 领域过滤、停用词
+│   ├── m2.json               # M2 配置：分析区间和生命周期事件阈值
+│   ├── golden_cases.json     # 9 个黄金案例的期望年份范围
 │   └── queries.json          # 170 个抓取查询，分 seeds/classic/recent
 ├── docs/
 │   ├── PLAN.md               # M0 到 M4 的阶段、任务、验收标准
@@ -42,11 +44,14 @@ concept_life/
 │   ├── PITFALLS.md           # 已知的坑，动手前先看
 │   ├── DECISIONS.md          # 影响架构和评测口径的决定
 │   ├── IDEAS.md              # 扩展想法池，带 ID、成本、评估、风险
+│   ├── DATA_SOURCES.md       # 添加 Acemap 以外数据源的做法
 │   └── AI_USAGE.md           # 课程提交用的 AI 使用说明
 ├── scripts/
 │   ├── m0_from_cache.py      # M0 命令行入口
 │   ├── crawl.py              # M1 Acemap 抓取，缓存、断点续抓、manifest
-│   └── data_report.py        # M1 数据质量报告：年份、字段、层级、缺失
+│   ├── data_report.py        # M1 数据质量报告：年份、字段、层级、缺失
+│   ├── m2_events.py          # M2 生命周期事件，写 events.jsonl
+│   └── check_golden_cases.py # M2 黄金案例回归检查
 ├── src/
 │   └── concept_life/
 │       ├── __init__.py       # 包版本
@@ -54,11 +59,13 @@ concept_life/
 │       ├── schema.py         # Paper / Concept 数据契约和 Acemap 解析
 │       ├── ingest.py         # 读缓存、去重、写 JSONL
 │       ├── series.py         # 逐年计数、展示名
-│       └── rising.py         # share 归一化的上升榜
+│       ├── rising.py         # share 归一化的上升榜
+│       └── mine.py           # 基于 share 的生命周期事件规则
 ├── tests/
 │   ├── test_schema.py        # 解析、层级过滤、top-k、领域过滤
 │   ├── test_ingest.py        # 停用词、空概念论文丢弃
-│   └── test_temporal.py      # share 归一化、new 概念、最小计数
+│   ├── test_temporal.py      # share 归一化、new 概念、最小计数
+│   └── test_mine.py          # 完整生命周期、休眠复活、短序列
 ├── data/
 │   ├── raw/                  # 原始响应和 manifest，只增不改，git 忽略
 │   │   └── acemap/           # 抓取响应，文件名是查询哈希 + 页码
@@ -82,8 +89,13 @@ concept_life/
 | `m0_from_cache.py` | 串起上面四步，写 CSV 和 summary | 不实现 M1 之后的逻辑 |
 | `crawl.py` | 按查询和页码抓 Acemap，缓存原始响应，写 manifest | 不解析、不做领域过滤 |
 | `data_report.py` | 读 `papers.jsonl`，输出年份、字段、层级、缺失统计 | 不做排名，不做图 |
+| `mine.py` | 按 share 规则检测出生、爆发、峰值、衰退、休眠、复活、死亡 | 不读文件，不写文件 |
+| `m2_events.py` | 读 `concept_series.csv`，写 `events.jsonl` 和事件表 | 不做替代检测，不做趋势预测 |
+| `check_golden_cases.py` | 用 9 个黄金案例检查事件年份 | 不做历史考证，只做回归 |
 | `queries.json` | 170 个抓取查询，分 `seeds`、`classic`、`recent` | 不保证每个查询都有结果 |
 | `m1.json` | M1 覆盖配置：全量缓存、CS 过滤、停用词 | 不改变 `default.json` 的 M0 行为 |
+| `m2.json` | M2 分析区间和事件阈值 | 不改变 M1 的过滤行为 |
+| `golden_cases.json` | 黄金案例的期望年份范围 | 不保证现实发明年 |
 
 ## 数据流
 
@@ -215,6 +227,35 @@ python scripts/data_report.py --papers data/processed/papers.jsonl --config conf
 
 本次全量结果：679 次请求，67,896 条原始记录，0 失败，601MB。去重和 CS 过滤后 42,460 篇论文，10,957 个概念，283,434 个概念实例，平均每篇 6.68 个。CS 覆盖 99.5%，206 篇没有 topics。年份 1990 到 2025，2021 年峰值 7,106 篇，2024 年 1,481 篇，2025 年 265 篇。近两年不完整，生命周期分析主区间设为 1995-2023，见 `D-010`。如果某年论文太少，先扩查询集，不要直接做生命周期事件。
 
+## M2 生命周期事件
+
+M2 读 `data/processed/concept_series.csv`，给每个概念打生命周期事件。分析区间 1995 到 2023，所有阈值在 `configs/m2.json`。
+
+```bash
+python scripts/m2_events.py --config configs/m2.json
+python scripts/check_golden_cases.py
+```
+
+产物：
+
+- `data/processed/events.jsonl`：一行一个事件，字段是 `concept_id`、`name`、`type`、`year`、`score`、`evidence`。
+- `data/processed/concept_events.csv`：表格版，`evidence` 是 JSON 字符串。
+- `runs/m2/summary.json`：事件计数、分析区间和阈值。
+
+本次结果：1,793 个概念有事件，共 3,003 个事件。出生 1,793，爆发 508，峰值 367，衰退 234，休眠 49，复活 49，死亡 3。黄金案例 30/30 通过。
+
+事件规则：
+
+- `birth`：分析区间内第一次出现。
+- `burst`：相对前三年均值的 z-score 至少 2，绝对占比增加至少 0.002，相对增加至少 20%。
+- `peak`：有效年份里 share 最大的年份，峰值年至少 5 篇。
+- `decline`：峰值后连续两年平均 share 低于峰值的 65%。
+- `dormancy`：峰值后连续两年活跃度低于 3 篇。
+- `revival`：休眠后的第一个活跃年。
+- `death`：休眠持续到分析区间结束。
+
+死亡只有 3 个，因为 42,460 篇语料里概念很少完全消失。海报上写“在语料中消失”，不要把 death 当主结论，见 `D-012`。黄金案例的年份是语料相对年份，不是现实发明年，见 `D-013`。
+
 ## 产物格式
 
 `data/processed/papers.jsonl` 每行一篇论文：
@@ -284,7 +325,7 @@ python scripts/data_report.py --papers data/processed/papers.jsonl --config conf
 python -m unittest discover -s tests -v
 ```
 
-预期 11 个测试全部通过。测试覆盖：
+预期 15 个测试全部通过。测试覆盖：
 
 - Acemap 解析、层级过滤、top-k 截断、缺年份拒绝。
 - 领域过滤、topic 字段提取、无 topics 论文的保留策略。
@@ -292,6 +333,9 @@ python -m unittest discover -s tests -v
 - share 归一化：语料翻倍不会让概念看起来变热。
 - 历史为 0 的概念标记为 `new`，不产生天文数字。
 - 最小计数过滤。
+- 完整生命周期：出生、爆发、峰值、衰退、死亡。
+- 休眠与复活，短序列跳过。
+- 来源字段和 Wikidata 提取。
 
 ## 如何扩展
 
@@ -312,7 +356,9 @@ python -m unittest discover -s tests -v
 - 约 32% 的记录没有摘要。生命周期分析不需要摘要，但后续做语义相似度时需要另找数据。
 - Acemap 只返回 `referenced_works_count`，没有引用列表。citation 脉络需要 OpenAlex 或 Semantic Scholar，见 `I-005`。
 - Acemap 的 `meta.count` 上限是 10000，不能当作语料真实总量，见 `P-020`。
-- “死亡”指在语料中连续 N 年没有出现，不是现实中消失。海报和报告要用“在语料中消失”这种措辞。
+- “死亡”指在语料中连续两年没有活跃论文，不是现实中消失。本次只有 3 个死亡事件，海报和报告要用“在语料中消失”这种措辞，见 `D-012`。
+- 生命周期事件是规则驱动的，泛概念仍然会产生事件，比如 `Implementation`、`Citation`、`Path (computing)`。案例和海报只用黄金案例和人工挑过的概念，见 `P-029`。
+- 早期年份论文少，`min_year_total=100` 只让峰值和爆发在语料足够大的年份计算，见 `P-027`。
 - 当前没有 demo。M4 才做，接口已经按“只读标准产物”设计。
 
 ## 文档索引
@@ -326,6 +372,7 @@ python -m unittest discover -s tests -v
 | `docs/PITFALLS.md` | 动手前看一遍，避免重复踩坑 |
 | `docs/DECISIONS.md` | 想知道为什么这样设计 |
 | `docs/IDEAS.md` | 想找扩展、备选方向、或换题 |
+| `docs/DATA_SOURCES.md` | 想接 OpenAlex、Semantic Scholar、DBLP、arXiv 时 |
 | `docs/AI_USAGE.md` | 写课程 AI 使用说明时 |
 
 ## 提交规范

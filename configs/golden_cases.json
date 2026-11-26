@@ -1,0 +1,89 @@
+{
+  "note": "年份是 Acemap 语料里的范围，不是现实世界的发明年。birth 是语料中首次出现，left-censored 表示它等于分析区间起点。",
+  "cases": [
+    {
+      "name": "Support vector machine",
+      "concept_id": "Sjg5OURFOEJH",
+      "expected": {
+        "birth": [1995, 2000],
+        "burst": [2003, 2005],
+        "peak": [2003, 2005],
+        "decline": [2006, 2012]
+      }
+    },
+    {
+      "name": "Recurrent neural network",
+      "concept_id": "SjhCRThERkU3RA",
+      "expected": {
+        "birth": [2002, 2006],
+        "burst": [2014, 2016],
+        "peak": [2015, 2017],
+        "decline": [2018, 2021]
+      }
+    },
+    {
+      "name": "Convolutional neural network",
+      "concept_id": "SkY4QURBRTdG",
+      "expected": {
+        "birth": [1997, 2000],
+        "burst": [2014, 2016],
+        "peak": [2017, 2019],
+        "decline": [2020, 2023]
+      }
+    },
+    {
+      "name": "Deep learning",
+      "concept_id": "Sjg3RkNGQTk4Rw",
+      "expected": {
+        "birth": [2007, 2010],
+        "burst": [2014, 2016],
+        "peak": [2020, 2022]
+      }
+    },
+    {
+      "name": "Generative adversarial network",
+      "concept_id": "SjlHRkZFRUFHOUQ",
+      "expected": {
+        "birth": [2016, 2017],
+        "burst": [2017, 2019],
+        "peak": [2020, 2022]
+      }
+    },
+    {
+      "name": "Transformer",
+      "concept_id": "SkREQTk5R0JF",
+      "expected": {
+        "birth": [2015, 2018],
+        "burst": [2019, 2020],
+        "peak": [2021, 2022]
+      }
+    },
+    {
+      "name": "Federated learning",
+      "concept_id": "SjlHRzlDOUM3RTg",
+      "expected": {
+        "birth": [2014, 2017],
+        "burst": [2019, 2020],
+        "peak": [2019, 2021]
+      }
+    },
+    {
+      "name": "Knowledge graph",
+      "concept_id": "SjlHRkU5Q0NDREU",
+      "expected": {
+        "birth": [2011, 2013],
+        "burst": [2018, 2019],
+        "peak": [2020, 2022]
+      }
+    },
+    {
+      "name": "Blockchain",
+      "concept_id": "SjlFRUdERkVFNzc",
+      "expected": {
+        "birth": [2008, 2017],
+        "burst": [2016, 2019],
+        "peak": [2021, 2023]
+      }
+    }
+  ]
+}

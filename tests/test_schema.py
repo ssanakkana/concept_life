@@ -40,6 +40,27 @@ class SchemaTest(unittest.TestCase):
         }
         self.assertIsNone(parse_work(work, min_level=2))
 
+    def test_extracts_source_and_wikidata(self):
+        work = {
+            "id": "w1",
+            "title": "x",
+            "publication_year": 2020,
+            "concepts": [
+                {
+                    "id": "c2",
+                    "display_name": "Machine learning",
+                    "level": 2,
+                    "wikidata": "https://www.wikidata.org/wiki/Q2539",
+                }
+            ],
+        }
+        paper = parse_work(work)
+        self.assertIsNotNone(paper)
+        self.assertEqual(paper.source, "acemap")
+        self.assertEqual(
+            paper.concepts[0].wikidata, "https://www.wikidata.org/wiki/Q2539"
+        )
+
     def test_extracts_topic_fields(self):
         work = {
             "id": "w1",
