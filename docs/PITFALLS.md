@@ -40,3 +40,7 @@
 | P-034 | Streamlit 1.67 警告 `use_container_width` 将在 2025-12-31 后移除 | 新版 API 改成 `width="stretch"` 或 `width="content"` | 全部换成 `width="stretch"`，不再用 `use_container_width` | `app.py` |
 | P-035 | 只检查 `_stcore/health` 返回 ok，页面仍可能有异常 | health 只说明服务器起来了，不执行页面代码 | 用 `streamlit.testing.v1.AppTest` 真正跑五个页面，断言 exception 为空 | `scripts/smoke_demo.py` |
 | P-036 | pandas 读带 BOM 的 CSV，第一列变成 `﻿concept_id` | CSV 用了 `utf-8-sig` 写入 | 读的时候也写 `encoding="utf-8-sig"` | `dashboard.py` |
+| P-037 | 生命周期聚类按年代或论文数分簇，不像形状 | 把绝对年份、total_count 放进特征，K-means 会按大小和时代切 | 聚类只用形状特征；total_count 只用于展示和排序 | `cluster.py`、`configs/m5.json` |
+| P-038 | “衰退型”里有很多成熟概念，看起来像领域死了 | 语料在增长，成熟概念的 share 也会自然下降 | 类型名是语料内份额形状，不是领域健康度；海报要写清楚 | `scripts/m5_clusters.py`、`D-020` |
+| P-039 | 直接按 cluster index 叫“类型 0”“类型 1” | K-means 的编号是随机的，换 seed 就变 | 用 centroid 规则命名，并保证名字唯一 | `cluster.py` |
+| P-040 | 聚类集合 1,837 个概念，事件集合 1,793 个 | total 把 1995 年以前的论文也算进去了 | total 只在分析区间内计数，和 M2 对齐 | `cluster.py` |

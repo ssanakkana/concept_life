@@ -48,6 +48,10 @@ def load_predictions(path: Path | None = None) -> pd.DataFrame:
     return load_csv(path or DATA_DIR / "trend_predictions.csv")
 
 
+def load_clusters(path: Path | None = None) -> pd.DataFrame:
+    return load_csv(path or DATA_DIR / "lifecycle_clusters.csv")
+
+
 def load_events(path: Path | None = None) -> pd.DataFrame:
     path = require(path or DATA_DIR / "events.jsonl")
     rows = [
@@ -108,6 +112,7 @@ def check_artifacts() -> list[Path]:
         DATA_DIR / "top_rising.csv",
         DATA_DIR / "replacements.csv",
         DATA_DIR / "trend_predictions.csv",
+        DATA_DIR / "lifecycle_clusters.csv",
         RUNS_DIR / "m1" / "report" / "year_histogram.csv",
         RUNS_DIR / "m1" / "report" / "summary.json",
         RUNS_DIR / "m2" / "summary.json",

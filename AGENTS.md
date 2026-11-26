@@ -85,6 +85,8 @@ uv run python scripts/smoke_demo.py
 
 新想法先写进 `docs/IDEAS.md`，给它一个 `I-NNN`，写清楚 DM 任务、数据、成本、评估、风险。不要有了想法就直接写代码。认领时把状态改成 `doing`，在 `docs/PLAN.md` 加任务，再动手。
 
+实现完成后必须立刻把 `docs/IDEAS.md` 里的状态改成 `done`，在该条目里写产出路径，并在 `docs/WORKLOG.md` 记录。不要等最后补，也不要只写“已完成”而不写路径。
+
 ## 7. Commit 规范
 
 格式：

@@ -101,10 +101,31 @@ M3 结果：替代检测给出 30 个候选对，Machine translation→Transform
 
 任务：
 
-- [x] demo，五个页面，uv 环境，AppTest 冒烟 0 异常
+- [x] demo，六个页面，uv 环境，AppTest 冒烟 0 异常
 - [ ] 海报
 - [ ] 讲稿
 - [ ] AI 使用说明
 - [ ] 提交材料
 
-M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_life/app.py` 启动。五个页面是总览、概念时间线、上升与替代、趋势回测、数据与方法。`uv run python scripts/smoke_demo.py` 全部 0 异常。海报和两分钟讲稿还没做。
+M4 demo 结果：`uv sync` 创建 `.venv`，`uv run streamlit run src/concept_life/app.py` 启动。六个页面是总览、概念时间线、生命周期类型、上升与替代、趋势回测、数据与方法。`uv run python scripts/smoke_demo.py` 全部 0 异常。海报和两分钟讲稿还没做。
+
+## M5 生命周期聚类（扩展）
+
+目标：按曲线形状聚类，输出类型表和 demo 页面。
+
+验收：
+
+- K-means 的 k 由 silhouette 选择。
+- 类型名有规则，不靠 cluster index。
+- demo 的生命周期类型页可用。
+- 测试覆盖 K-means、silhouette、flash 特征。
+
+任务：
+
+- [x] 特征：span、peak position、decline speed、recent/peak、volatility、事件 flag
+- [x] K-means + silhouette，k=3 到 6
+- [x] 标签规则
+- [x] demo 页面
+- [x] 测试
+
+M5 结果：k=5，silhouette 0.285（k=3 0.248，k=4 0.260，k=6 0.235），1,791 个概念。昙花一现 781，新兴型 465，衰退型 331，爆发后衰退 177，复活型 37。26 个测试通过，demo 六页 0 异常。

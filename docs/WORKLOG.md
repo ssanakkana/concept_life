@@ -29,6 +29,7 @@
 | W-20261126-04 | 2026-11-26 | M2 生命周期事件与黄金案例 | 完成，976f2cd |
 | W-20261126-05 | 2026-11-26 | M3 替代候选与趋势预测 | 完成，a568409 |
 | W-20261126-06 | 2026-11-26 | M4 Streamlit demo 与 uv 环境 | 完成，33e9755 |
+| W-20261126-07 | 2026-11-26 | M5 生命周期聚类与 demo 页面 | 完成，待提交 |
 
 ## W-20261126-01 · 2026-11-26 · 会话 01
 
@@ -370,3 +371,52 @@ uv run python -m unittest discover -s tests -v
 - 输出采纳/拒绝：采纳 uv + `pyproject.toml` + `uv.lock` 作为主环境；demo 先做五页骨架，不做实时 API 和图数据库。
 
 **Commit**：33e9755
+
+## W-20261126-07 · 2026-11-26 · 会话 01（续）
+
+**目标**：实现 I-003 生命周期聚类，并接到 demo 的“生命周期类型”页。
+
+**做了什么**：
+
+- 新增 `configs/m5.json`：分析区间、active 阈值、k 搜索范围、seed。
+- 新增 `src/concept_life/cluster.py`：形状特征、numpy K-means、silhouette、k 选择、规则标签。
+- 新增 `scripts/m5_clusters.py`：读序列、总量、事件，写 `lifecycle_clusters.csv` 和 `runs/m5/clusters_summary.json`。
+- 新增 `tests/test_cluster.py`：K-means 两个簇、silhouette、flash 特征。
+- `dashboard.py` 和 `app.py` 增加“生命周期类型”页：五类柱状图、peak position × decline speed 散点、按类型看 top 30。
+- `AGENTS.md` 增加规则：实现 IDEA 后必须把 `docs/IDEAS.md` 状态改成 done 并写产出路径。
+- `docs/IDEAS.md` 把 I-003 标成 done。
+
+**命令**：
+
+```bash
+uv run python scripts/m5_clusters.py
+uv run python -m unittest discover -s tests -v
+uv run python scripts/smoke_demo.py
+```
+
+**结果**：
+
+- k=5，silhouette 0.285；k=3 是 0.248，k=4 是 0.260，k=6 是 0.235。
+- 1,791 个概念入聚类。
+- 五类：昙花一现 781，新兴型 465，衰退型 331，爆发后衰退 177，复活型 37。
+- 26 个测试通过，demo 六页 0 异常。
+- 典型例子：昙花一现有 Construct (python library)、Visualization；新兴型有 Gene、Embedding、Transformer；衰退型有 Concurrency、Cache；爆发后衰退有 ANN、Deep learning；复活型有 Random forest、Differential privacy。
+
+**踩坑**：
+
+- 第一版 total 把 1995 年以前的论文也算进去，聚类集合 1,837 比事件集合 1,793 多。改成只在分析区间内计数后对齐到 1,791。
+- 没有出现“常青型”。在增长语料里，长期概念的 share 也会自然下降，所以“衰退型”是语料内份额下降，不是领域死亡。
+- 复活型只有 37 个，且复活事件本身有噪声，标签只能当描述。
+- K-means 的 cluster index 是任意的，必须用 centroid 规则命名，不能直接按编号叫“类型 0”。
+
+**下一步**：
+
+- 提交 M5 commit 并推送。
+- 可选：替代候选人工标注页，给 `valid_1_0` 一个可视化入口。
+- 最后统一做海报和两分钟讲稿。
+
+**AI 交互**：
+
+- 工具/模型：Claude Code。
+- 关键提示：用户要求“某个 IDEA 如果在项目中实现了记得标注”，并指定先做生命周期聚类。
+- 输出采纳/拒绝：采纳“形状特征、K-means、silhouette 选 k、规则命名”的方案；没有把 total_count 或绝对年份放进聚类特征，避免按大小或年代分簇。

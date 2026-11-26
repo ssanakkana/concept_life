@@ -13,7 +13,7 @@ from streamlit.testing.v1 import AppTest
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "src" / "concept_life" / "app.py"
-PAGES = ["总览", "概念时间线", "上升与替代", "趋势回测", "数据与方法"]
+PAGES = ["总览", "概念时间线", "生命周期类型", "上升与替代", "趋势回测", "数据与方法"]
 
 
 def main() -> int:

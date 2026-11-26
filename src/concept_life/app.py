@@ -24,6 +24,7 @@ from concept_life.dashboard import (  # noqa: E402
     concept_events,
     concept_options,
     event_counts,
+    load_clusters,
     load_events,
     load_predictions,
     load_replacements,
@@ -60,6 +61,7 @@ def require_artifacts() -> None:
                 "uv run python scripts/m2_events.py --config configs/m2.json",
                 "uv run python scripts/m3_replacements.py",
                 "uv run python scripts/m3_trend.py",
+                "uv run python scripts/m5_clusters.py",
             ]
         ),
         language="bash",
@@ -172,6 +174,80 @@ def page_timeline(series: pd.DataFrame, events: pd.DataFrame) -> None:
     )
     with st.expander("事件证据"):
         st.json(concept_event_rows.to_dict(orient="records"))
+
+
+def page_lifecycle() -> None:
+    st.title("生命周期类型")
+    st.caption(
+        "按曲线形状聚类，不是按论文数或年份。K-means + silhouette，k=5。"
+    )
+    clusters = load_clusters()
+
+    counts = (
+        clusters["label"]
+        .value_counts()
+        .rename_axis("label")
+        .reset_index(name="concepts")
+    )
+    left, right = st.columns([1, 2])
+    with left:
+        st.subheader("五类概念")
+        st.bar_chart(counts.set_index("label"), height=280)
+    with right:
+        st.subheader("形状分布")
+        scatter = alt.Chart(clusters).mark_circle(opacity=0.55).encode(
+            x=alt.X(
+                "peak_position:Q",
+                title="峰值位置（0=早期，1=晚期）",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            y=alt.Y(
+                "decline_speed:Q",
+                title="峰值到末期的下降幅度",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            color=alt.Color("label:N", title="类型"),
+            size=alt.Size(
+                "total_count:Q",
+                title="累计论文",
+                scale=alt.Scale(type="sqrt", range=[10, 350]),
+            ),
+            tooltip=[
+                "name",
+                "label",
+                "total_count",
+                "peak_year",
+                "span",
+                "decline_speed",
+            ],
+        )
+        st.altair_chart(scatter, width="stretch")
+
+    st.divider()
+    labels = sorted(clusters["label"].unique())
+    selected = st.selectbox("看一个类型", labels)
+    subset = clusters[clusters["label"] == selected].sort_values(
+        "total_count", ascending=False
+    )
+    st.write(f"{selected}：{len(subset)} 个概念")
+    st.dataframe(
+        subset[
+            [
+                "name",
+                "total_count",
+                "first_year",
+                "peak_year",
+                "span",
+                "decline_speed",
+                "recent_to_peak",
+            ]
+        ].head(30),
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "类型名是描述性的，不是金标。复活型样本只有 37 个，且复活事件本身有噪声。"
+    )
 
 
 def page_rising() -> None:
@@ -290,7 +366,8 @@ def main() -> None:
     events = cached_events()
 
     page = st.sidebar.radio(
-        "页面", ["总览", "概念时间线", "上升与替代", "趋势回测", "数据与方法"]
+        "页面",
+        ["总览", "概念时间线", "生命周期类型", "上升与替代", "趋势回测", "数据与方法"],
     )
     st.sidebar.divider()
     st.sidebar.caption(f"论文 {summaries['m1']['papers']:,} 篇")
@@ -302,6 +379,8 @@ def main() -> None:
         page_overview(summaries, events)
     elif page == "概念时间线":
         page_timeline(series, events)
+    elif page == "生命周期类型":
+        page_lifecycle()
     elif page == "上升与替代":
         page_rising()
     elif page == "趋势回测":
