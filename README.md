@@ -62,6 +62,10 @@ concept_life/
 │   ├── IDEAS.md              # 扩展想法池，带 ID、成本、评估、风险
 │   ├── DATA_SOURCES.md       # 添加 Acemap 以外数据源的做法
 │   └── AI_USAGE.md           # 课程提交用的 AI 使用说明
+├── experiments/
+│   ├── README.md             # 交互地图原型说明
+│   ├── d3.v7.min.js          # 本地 D3，离线可用
+│   └── map_interactive.html  # 生成物，git 忽略
 ├── scripts/
 │   ├── m0_from_cache.py      # M0 命令行入口
 │   ├── crawl.py              # M1 Acemap 抓取，缓存、断点续抓、manifest
@@ -72,6 +76,7 @@ concept_life/
 │   ├── m5_clusters.py        # M5 生命周期聚类，写 clusters CSV 和 summary
 │   ├── m7_early.py           # M7 早期预测，写 metrics 和预测表
 │   ├── m8_map.py             # M8 共现图、Louvain、桥接概念、地图产物
+│   ├── build_map_html.py     # 交互地图原型的 HTML 生成器
 │   ├── evaluate_replacements.py # M6 从人工标签算 precision@k
 │   ├── smoke_demo.py         # M4 七个 Streamlit 页面的冒烟测试
 │   └── check_golden_cases.py # M2 黄金案例回归检查
@@ -146,6 +151,7 @@ concept_life/
 | `community.py` | Louvain 社区发现、betweenness 桥接分数 | 不做时间演化匹配 |
 | `m8_map.py` | 建共现图、跑社区、裁剪地图、写节点和边 | 不画全图，只画 top 300 |
 | `m8.json` | M8 图规模、边阈值、Louvain 分辨率 | 不改变 M3 的替代候选 |
+| `build_map_html.py` | 生成独立交互地图 HTML | 不接 Streamlit，不写数据 |
 | `dashboard.py` | demo 的只读数据加载、复核标签合并和 precision 计算 | 不写原始数据，不调 API |
 | `app.py` | Streamlit 七页界面，含替代复核和保存 | 不做模型训练 |
 | `evaluate_replacements.py` | 从 `replacement_review.csv` 算 precision@10/20 | 不替人做判断 |
@@ -441,6 +447,8 @@ uv run python scripts/m8_map.py
 本次结果：500 个节点、17,661 条边、8 个社区，modularity 0.328。地图画 300 个节点、1,537 条边。社区大致对应云/系统、ML/CV、软件、图/嵌入、数据库/搜索、概率/因果等。桥接榜前面是 Set (abstract data type)、Process (computing)、Artificial neural network、Scalability 等，很多是泛概念，不是真正的跨领域桥梁；这是概念标签噪声，见 `P-052`。
 
 地图只画 top 300 节点和每个节点最强的 6 条边，避免糊成一团。Louvain 固定 seed=42，社区编号按大小和最小节点 id 排序，换 seed 会变。
+
+交互原型在 `experiments/map_interactive.html`，由 `scripts/build_map_html.py` 生成。它用本地 D3 做力导向布局，支持拖动、缩放、点击节点聚焦、点击空白退出。还没接进 Streamlit demo，确认后再替换研究地图页。
 
 ## 产物格式
 

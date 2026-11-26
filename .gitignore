@@ -9,5 +9,10 @@ data/raw/
 data/processed/
 data/processed_smoke/
 runs/
+experiments/map_interactive.html
+experiments/map_artifact.html
+experiments/map_preview*.png
+experiments/map_artifact*.png
+experiments/_map_check.js
 .DS_Store
 Thumbs.db

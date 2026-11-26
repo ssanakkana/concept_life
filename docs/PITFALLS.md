@@ -56,3 +56,5 @@
 | P-050 | 研究地图一画就糊成一团 | 500 节点、17,661 条边，全画出来无法阅读 | 地图只画 top 300 节点，每个节点保留最强 6 条边 | `m8_map.py`、`app.py` |
 | P-051 | 每次跑 Louvain 社区编号不一样 | 算法有随机性 | 固定 seed=42；社区按大小和最小节点 id 排序，编号稳定 | `community.py`、`configs/m8.json` |
 | P-052 | 桥接榜前面全是 `Set`、`Process`、`Benchmark` 这种泛概念 | betweenness 偏向 hub；概念标签本身有噪声 | 写清“桥接概念”是候选，不是真正的跨领域桥梁；地图页和海报都要说明 | `m8_map.py`、`app.py`、`D-025` |
+| P-053 | 力导向图一打开还是偏密，中心标签重叠 | 300 节点、1,537 条边，初始全画会糊 | 边更淡、初始只显示 top 9 标签；聚焦模式放大节点和邻居、压暗其他节点 | `build_map_html.py`、`experiments/README.md` |
+| P-054 | 生成的交互 HTML 内嵌了 300 个节点数据 | 生成物包含 `data/processed` 的内容，不适合进 git | 只提交生成器和本地 D3；HTML 和截图 gitignore，随时可重建 | `.gitignore`、`scripts/build_map_html.py` |
