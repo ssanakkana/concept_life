@@ -31,14 +31,14 @@
 | I-009 | 社区演化：出生、合并、分裂、消亡 | 社区检测 + 匹配 | 无 | 1 天 | P1 | done（社区发现，演化未做） |
 | I-010 | 概念别名合并 | 实体消解 | 无 | 1 天 | P2 | backlog |
 | I-011 | LLM 社区命名与趋势摘要 | 生成辅助 | LLM API | 0.5 天 | P3 | backlog |
-| I-012 | 交互式研究地图 | 展示层 | 无 | 1 天 | P1 | done（静态地图，时间滑块未做） |
+| I-012 | 交互式研究地图 | 展示层 | 无 | 1 天 | P1 | done（交互地图已接入，时间滑块待实现） |
 | I-013 | 黄金案例集 | 回归测试 + 海报素材 | 无 | 0.5 天 | P0 | done |
 | I-014 | 领域过滤与歧义概念停用词 | 数据清洗 | 无 | 0.5 天 | P0 | done |
 | I-015 | 数据质量仪表盘 | 描述统计 | 无 | 0.5 天 | P1 | done |
 
 P0 是核心，先做；P1 是强加分；P2 是锦上添花；P3 只有时间富余才做。
 
-已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-003 的早期预测在 M7 落地，见 `src/concept_life/early.py`、`scripts/m7_early.py`、`data/processed/early_predictions.csv` 和 demo 的“早期预测”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核标签在 `data/labels/replacement_review.csv`。20 对标完，采用“焦点转移”标准，9 对有效，precision@10 0.60、precision@20 0.45；11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认。I-009 的社区发现在 M8 落地，见 `src/concept_life/community.py`、`scripts/m8_map.py`；I-012 的静态研究地图在 M8 落地，见 `data/processed/research_map_nodes.csv`、`research_map_edges.csv` 和 demo 的研究地图页；交互原型在 `experiments/map_interactive.html`，由 `scripts/build_map_html.py` 生成，支持拖动、缩放、点击聚焦；单文件版在 `experiments/map_standalone.html`，D3 内联，可直接分发。交互原型还没接入 demo。社区时间演化和地图时间滑块还没做。I-012 交互式研究地图还没有做，demo 目前是时间线、聚类散点和表格，不是节点图。
+已完成：I-013 黄金案例集在 M2 落地，见 `configs/golden_cases.json` 和 `scripts/check_golden_cases.py`；I-014 领域过滤与停用词在 M1 落地，见 `configs/m1.json`；I-015 数据质量仪表盘在 M1 落地，见 `scripts/data_report.py`；I-002 趋势预测和 I-004 候选替代检测在 M3 落地，见 `scripts/m3_trend.py`、`scripts/m3_replacements.py`；I-001 概念时间线在 M4 demo 落地，见 `src/concept_life/app.py`；I-003 生命周期聚类在 M5 落地，见 `src/concept_life/cluster.py`、`scripts/m5_clusters.py`、`data/processed/lifecycle_clusters.csv` 和 demo 的“生命周期类型”页；I-003 的早期预测在 M7 落地，见 `src/concept_life/early.py`、`scripts/m7_early.py`、`data/processed/early_predictions.csv` 和 demo 的“早期预测”页；I-004 的人工复核在 M6 落地，见 demo 的“替代复核”页和 `scripts/evaluate_replacements.py`。I-004 只是候选生成，人工复核标签在 `data/labels/replacement_review.csv`。20 对标完，采用“焦点转移”标准，9 对有效，precision@10 0.60、precision@20 0.45；11 对由人初判，9 对由 AI 补判，5 对在讨论后改判，最终人工确认。I-009 的社区发现在 M8 落地，见 `src/concept_life/community.py`、`scripts/m8_map.py`；I-012 的交互式研究地图已接入 `src/concept_life/app.py`，模板为 `experiments/map_template.html`，可离线分享 `experiments/map_standalone.html`。社区时间演化和地图时间滑块待实现。
 
 ## I-001 概念演化卡片与时间线
 

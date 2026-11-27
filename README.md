@@ -405,7 +405,7 @@ demo 的“生命周期类型”页依赖 M5，第一次启动前先跑 `uv run 
 - 概念时间线：选择概念，看 share 曲线和事件虚线，下面是事件表和证据。
 - 生命周期类型：五类概念的柱状图、peak position × decline speed 散点、按类型看 top 30。
 - 早期预测：只用前三年特征预测五类，同分布 5 折和出生年份切分，混淆矩阵和测试例子。
-- 研究地图：Louvain 社区着色的概念图、社区表、桥接概念榜。
+- 研究地图：交互式 Louvain 概念图、社区表、桥接概念榜。
 - 上升与替代：上升榜、候选替代表、人工复核表。
 - 替代复核：逐对看时间线，标是/否/不确定，保存后算 precision。
 - 趋势回测：模型和三条基线的指标，2020 窗口的预测表。
@@ -454,7 +454,7 @@ uv run python scripts/m8_map.py
 
 地图只画 top 300 节点和每个节点最强的 6 条边，避免糊成一团。Louvain 固定 seed=42，社区编号按大小和最小节点 id 排序，换 seed 会变。
 
-交互原型在 `experiments/map_interactive.html`，由 `scripts/build_map_html.py` 生成。它用本地 D3 做力导向布局，支持拖动、缩放、点击节点聚焦、点击空白退出。聚焦时图例隐藏，视野自动平移到“节点 + 邻居”的包围盒。单文件版 `experiments/map_standalone.html` 把 D3 内联，进 git，下载后双击即可。还没接进 Streamlit demo，确认后再替换研究地图页。
+Streamlit 的「研究地图」页读取本地 M8 产物，内联 D3，支持离线演示。总览显示全部地图节点并标注各社区代表，悬停查看主要连线，点击后可平滑聚焦最强的 5 个邻居。精简图只显示代表概念。分享快照 `experiments/map_standalone.html` 双击即可打开，生成方法见 [地图说明](experiments/README.md)。
 
 ## 产物格式
 

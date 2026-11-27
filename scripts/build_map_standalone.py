@@ -6,21 +6,21 @@ Run after scripts/build_map_html.py:
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from concept_life.research_map import inline_map_d3  # noqa: E402
+
+
 SOURCE = ROOT / "experiments" / "map_interactive.html"
-D3 = ROOT / "experiments" / "d3.v7.min.js"
 OUT = ROOT / "experiments" / "map_standalone.html"
 
 
 def main() -> None:
-    html = SOURCE.read_text(encoding="utf-8")
-    d3 = D3.read_text(encoding="utf-8").replace("</script", "<\\/script")
-    html = html.replace(
-        '<script src="d3.v7.min.js"></script>',
-        f"<script>\n{d3}\n</script>",
-    )
+    html = inline_map_d3(SOURCE.read_text(encoding="utf-8"))
     OUT.write_text(html, encoding="utf-8")
     print(f"wrote {OUT} ({len(html) / 1024:.1f} KB)")
 
