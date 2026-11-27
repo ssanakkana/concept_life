@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from concept_life.dashboard import (  # noqa: E402
+    DATA_DIR,
     LABELS_DIR,
     RUNS_DIR,
     check_artifacts,
@@ -26,13 +27,10 @@ from concept_life.dashboard import (  # noqa: E402
     concept_options,
     event_counts,
     load_clusters,
-    load_communities,
     load_community_summary,
     load_early_metrics,
     load_early_predictions,
     load_events,
-    load_map_edges,
-    load_map_nodes,
     load_predictions,
     load_replacements,
     load_review,
@@ -42,6 +40,8 @@ from concept_life.dashboard import (  # noqa: E402
     review_precision,
     timeline,
 )
+
+from concept_life.research_map import render_map_html  # noqa: E402
 
 st.set_page_config(page_title="Concept Life", page_icon="🌱", layout="wide")
 
@@ -264,12 +264,9 @@ def page_lifecycle() -> None:
 def page_map() -> None:
     st.title("研究地图")
     st.caption(
-        "节点是概念，颜色是 Louvain 社区，边是共现。"
-        "地图只画 top 300 概念和每个节点最强的 6 条边，避免糊成一团。"
+        "节点是概念，颜色是 Louvain 社区，边是共现。悬停查看主要连线，点击聚焦。"
     )
     summary = load_community_summary()
-    nodes = load_map_nodes()
-    edges = load_map_edges()
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("图节点", f"{summary['n_nodes_full']:,}")
@@ -277,42 +274,15 @@ def page_map() -> None:
     col3.metric("社区", summary["n_communities"])
     col4.metric("modularity", f"{summary['modularity']:.3f}")
 
-    positions = nodes.set_index("concept_id")[["x", "y"]]
-    edge_frame = edges.merge(
-        positions, left_on="source", right_index=True
-    ).rename(columns={"x": "x1", "y": "y1"})
-    edge_frame = edge_frame.merge(
-        positions, left_on="target", right_index=True
-    ).rename(columns={"x": "x2", "y": "y2"})
-
-    line = alt.Chart(edge_frame).mark_rule(
-        opacity=0.18, color="#95a5a6"
-    ).encode(
-        x=alt.X("x1:Q", axis=None),
-        y=alt.Y("y1:Q", axis=None),
-        x2="x2:Q",
-        y2="y2:Q",
+    map_html = render_map_html(
+        DATA_DIR / "research_map_nodes.csv",
+        DATA_DIR / "research_map_edges.csv",
+        summary,
+        inline_d3=True,
     )
-    points = alt.Chart(nodes).mark_circle(opacity=0.85).encode(
-        x=alt.X("x:Q", axis=None),
-        y=alt.Y("y:Q", axis=None),
-        color=alt.Color("community:N", legend=None),
-        size=alt.Size(
-            "total_count:Q",
-            scale=alt.Scale(type="sqrt", range=[20, 400]),
-            legend=None,
-        ),
-        tooltip=[
-            "name",
-            "community",
-            "total_count",
-            "betweenness",
-            "degree",
-        ],
-    )
-    st.altair_chart((line + points).properties(height=560), width="stretch")
+    st.iframe(map_html, height=660, tab_index=0, alt="交互式研究地图")
     st.caption(
-        f"地图画 {summary['map']['nodes']} 个节点、{summary['map']['edges']} 条边。"
+        f"地图包含 {summary['map']['nodes']} 个节点和 {summary['map']['edges']} 条共现关系。"
         "betweenness 高的概念很多是“Set”“Process”“Benchmark”这类泛概念，"
         "这是概念标签噪声，不是真正的跨领域桥梁。"
     )

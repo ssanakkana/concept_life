@@ -60,3 +60,4 @@
 | P-054 | 生成的交互 HTML 内嵌了 300 个节点数据 | 生成物包含 `data/processed` 的内容，不适合进 git | 只提交生成器和本地 D3；HTML 和截图 gitignore，随时可重建 | `.gitignore`、`scripts/build_map_html.py` |
 | P-055 | 点击节点后聚焦效果看不见，节点被右侧图例挡住 | 节点位置靠近右边缘，图例是绝对定位覆盖层 | 聚焦时隐藏图例，并自动把“节点 + 邻居”的包围盒平移到视野中央；点击空白恢复 | `build_map_html.py`、`experiments/README.md` |
 | P-056 | `map_standalone.html` 内嵌 300 节点数据，数据更新后文件会过期 | 单文件版是有意提交的分享版，不是普通生成物 | 数据或图更新后重新跑 `build_map_html.py` 和 `build_map_standalone.py`，再提交单文件版 | `scripts/build_map_standalone.py`、`experiments/README.md` |
+| P-057 | 分享版可能比本地 M8 产物旧 | 分享版内嵌生成时的数据 | Streamlit 读取当前 M8 产物并渲染同一模板，分享文件按需重新构建 | `app.py`、`research_map.py`、`D-026` |

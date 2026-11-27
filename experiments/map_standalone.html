@@ -19,9 +19,12 @@
     color: var(--ink);
     background: var(--paper);
     font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
   header {
+    flex-shrink: 0;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -44,24 +47,38 @@
     cursor: pointer;
   }
   button:hover { border-color: var(--accent); color: var(--accent); }
-  main { position: relative; height: calc(100vh - 82px); }
+  main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: stretch;
+  }
+  #canvas { position: relative; flex: 1; min-width: 0; }
+  .node { cursor: pointer; }
+  .node circle { transition: fill 220ms, opacity 220ms; }
+  @media (prefers-reduced-motion: reduce) {
+    .node circle { transition: none; }
+  }
+  .node:focus { outline: none; }
+  .node:focus-visible circle { stroke: var(--accent); stroke-width: 3; }
+  .link, .label-leader { pointer-events: none; }
+  .label-leader { stroke-opacity: 0.53; }
+  #toggle-density[aria-pressed="true"] { border-color: var(--accent); }
   svg { width: 100%; height: 100%; display: block; cursor: grab; }
   svg:active { cursor: grabbing; }
   .link { stroke: #9aa7b8; }
   .node circle { stroke: #fff; }
   .node text {
     fill: #34495e;
-    pointer-events: none;
     paint-order: stroke;
     stroke: rgba(255, 255, 255, 0.9);
     stroke-width: 2.5px;
   }
   #legend[hidden] { display: none !important; }
   #legend {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    width: 238px;
+    flex: 0 0 216px;
+    align-self: flex-start;
+    margin: 14px 14px 14px 0;
     max-height: calc(100% - 28px);
     overflow: auto;
     padding: 12px 13px;
@@ -124,7 +141,11 @@
   }
   @media (max-width: 760px) {
     header { align-items: flex-start; flex-direction: column; }
-    #legend { width: 190px; }
+    #legend { flex-basis: 185px; }
+    #hint { max-width: calc(100% - 32px); }
+  }
+  @media (max-width: 570px) {
+    #legend { display: none; }
     #hint { display: none; }
   }
 </style>
@@ -138,15 +159,17 @@
   <div class="controls">
     <button id="reset-view">重置视图</button>
     <button id="reheat">重新布局</button>
-    <button id="toggle-labels">显示全部标签</button>
+    <button id="toggle-density" aria-pressed="true">切换精简图</button>
   </div>
 </header>
 <main>
-  <svg id="graph"></svg>
-  <aside id="legend"><h2>社区</h2><div id="legend-body"></div></aside>
-  <div id="tooltip"></div>
-  <div id="focus-label"></div>
-  <div id="hint">拖动节点 · 滚轮缩放 · 点击节点聚焦 · 点击空白退出</div>
+  <div id="canvas">
+    <svg id="graph" aria-label="研究概念共现图"></svg>
+    <div id="tooltip"></div>
+    <div id="focus-label" role="status"></div>
+    <div id="hint"></div>
+  </div>
+  <aside id="legend" aria-label="社区图例"><h2>社区</h2><div id="legend-body"></div></aside>
 </main>
 <script>
 // https://d3js.org v7.9.0 Copyright 2010-2023 Mike Bostock
@@ -165,24 +188,27 @@ const palette = [
   "#59a14f", "#edc948", "#b07aa1", "#ff9da7",
   "#9c755f", "#bab0ac", "#86bcb6", "#d37295"
 ];
-const color = d3.scaleOrdinal(palette);
+const color = d3.scaleOrdinal(DATA.communities.map(d => d.community), palette);
 const extent = d3.extent(nodes, d => d.total);
 const radius = d3.scaleSqrt().domain(extent).range([4, 20]);
 const baseR = d => radius(d.total);
 
-document.getElementById("stats").textContent =
-  `${DATA.stats.nodes} 个概念 · ${DATA.stats.edges} 条边 · ` +
-  `${DATA.stats.communities} 个社区 · modularity ${DATA.stats.modularity.toFixed(3)}`;
-
-const main = document.querySelector("main");
-let width = main.clientWidth;
-let height = main.clientHeight;
+const canvas = document.getElementById("canvas");
+let width = canvas.clientWidth;
+let height = canvas.clientHeight;
+const representatives = new Set(Array.from(d3.rollup(
+  nodes, members => d3.greatest(members, d => d.total).id, d => d.community
+).values()));
 const svg = d3.select("#graph").attr("viewBox", [0, 0, width, height]);
 const viewport = svg.append("g");
 
 const zoom = d3.zoom()
   .scaleExtent([0.25, 5])
-  .on("zoom", event => viewport.attr("transform", event.transform));
+  .on("zoom", event => {
+    viewport.attr("transform", event.transform);
+    paintNodes(event.transform.k);
+    placeLabels(event.transform);
+  });
 svg.call(zoom);
 
 const link = viewport.append("g")
@@ -200,23 +226,29 @@ const node = viewport.append("g")
   .data(nodes)
   .join("g")
   .attr("class", "node")
+  .attr("role", "button")
+  .attr("aria-label", d => d.name)
   .call(dragBehavior)
+  .on("keydown", (event, d) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      focusNode(d);
+    }
+  })
   .on("click", (event, d) => { event.stopPropagation(); focusNode(d); })
   .on("mouseenter", (event, d) => showTooltip(event, d))
   .on("mousemove", moveTooltip)
-  .on("mouseleave", hideTooltip);
+  .on("mouseleave", clearHover);
 
 node.append("circle")
   .attr("r", baseR)
   .attr("fill", d => color(d.community))
   .attr("stroke-width", 1.4);
 
-const labels = node.append("text")
-  .text(d => d.name)
-  .attr("x", d => baseR(d) + 4)
-  .attr("y", 4)
-  .attr("font-size", 9.5)
-  .style("display", d => d.total >= 2000 ? null : "none");
+const labelText = d => d.name.length > 32 ? d.name.slice(0, 30) + "…" : d.name;
+const leaders = node.insert("line", "circle").attr("class", "label-leader").attr("aria-hidden", "true");
+const labels = node.append("text").text(labelText).attr("aria-hidden", "true");
+const measureLabel = document.createElement("canvas").getContext("2d");
 
 // Seed the force layout with the spring positions, scaled to the canvas.
 nodes.forEach(d => {
@@ -242,18 +274,23 @@ function ticked() {
     .attr("y1", d => d.source.y)
     .attr("x2", d => d.target.x)
     .attr("y2", d => d.target.y);
-  node.attr("transform", d => `translate(${d.x},${d.y})`);
+  node.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
+  placeLabels(d3.zoomTransform(svg.node()));
 }
 
 function dragBehavior(selection) {
   selection.call(d3.drag()
+    .clickDistance(4)
     .on("start", (event, d) => {
       event.sourceEvent.stopPropagation();
-      if (!event.active) simulation.alphaTarget(0.28).restart();
       d.fx = d.x;
       d.fy = d.y;
     })
-    .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+    .on("drag", (event, d) => {
+      if (simulation.alphaTarget() === 0) simulation.alphaTarget(0.28).restart();
+      d.fx = event.x;
+      d.fy = event.y;
+    })
     .on("end", (event, d) => {
       if (!event.active) simulation.alphaTarget(0);
       d.fx = null;
@@ -261,189 +298,439 @@ function dragBehavior(selection) {
     }));
 }
 
+const compactNeighborCount = 5;
 let focusedId = null;
 let neighborWeight = new Map();
+let strongestNeighbors = new Set();
 let maxWeight = 1;
-let showAllLabels = false;
-let previousTransform = d3.zoomIdentity;
-let focusToken = 0;
+let showFullGraph = true;
+let showAllNeighbors = false;
+let overviewPositions = null;
+let overviewCamera = null;
+let overviewRadii = null;
+let hoveredId = null;
+const incidentEdges = new Map(nodes.map(d => [d.id, []]));
+for (const edge of links) {
+  incidentEdges.get(edge.source.id).push(edge);
+  incidentEdges.get(edge.target.id).push(edge);
+}
+for (const edges of incidentEdges.values()) edges.sort((a, b) => b.support - a.support);
 
-function endpointId(value) {
-  return typeof value === "object" ? value.id : value;
+function inNeighborhood(d) {
+  return d.id === focusedId || (showAllNeighbors ? neighborWeight.has(d.id) : strongestNeighbors.has(d.id));
+}
+
+function isVisible(d) {
+  return focusedId ? inNeighborhood(d) : showFullGraph || representatives.has(d.id);
+}
+
+function isBackdrop(d) {
+  return showFullGraph && Boolean(focusedId) && !inNeighborhood(d);
+}
+
+function worldRadius(d, scale) {
+  if (isBackdrop(d)) return 2 / scale;
+  if (!showFullGraph) return displayRadius(d);
+  if (focusedId) return overviewRadii.get(d.id);
+
+  const representative = representatives.has(d.id);
+  const size = baseR(d) * (representative ? 1.7 : 0.85);
+  return Math.max(size, (representative ? 8 : 2.8) / scale);
+}
+
+function paintNodes(scale) {
+  node.select("circle").attr("r", d => isVisible(d) || isBackdrop(d) ? worldRadius(d, scale) : 0);
+}
+
+function refreshLinks() {
+  const visible = focusedId
+    ? new Set(incidentEdges.get(focusedId).filter(edge => inNeighborhood(edge.source) && inNeighborhood(edge.target)))
+    : showFullGraph
+      ? new Set(hoveredId ? incidentEdges.get(hoveredId).slice(0, 8) : [])
+      : null;
+  link.style("display", edge => (visible
+    ? visible.has(edge)
+    : isVisible(edge.source) && isVisible(edge.target)) ? null : "none")
+    .attr("stroke-opacity", focusedId ? 0.56 : 0.29)
+    .attr("stroke-width", edge => focusedId ? 1 + 2 * edge.support / maxWeight : 1.25);
+}
+
+function displayRadius(d) {
+  if (d.id === focusedId) return Math.min(28, baseR(d) * 2.5);
+  if (!focusedId) return showFullGraph ? baseR(d) : 9 + baseR(d) * 1.25;
+  return Math.min(19, baseR(d) * (1 + 0.8 * neighborWeight.get(d.id) / maxWeight));
 }
 
 function focusForce(alpha) {
   if (!focusedId) return;
   const center = byId.get(focusedId);
-  if (!center) return;
-  nodes.forEach(n => {
-    if (n.id === focusedId) return;
-    const weight = neighborWeight.get(n.id) || 0;
-    if (!weight) return;
-    const strength = 0.02 + 0.10 * (weight / maxWeight);
-    n.vx += (center.x - n.x) * strength * alpha;
-    n.vy += (center.y - n.y) * strength * alpha;
-  });
+  for (const [id, weight] of neighborWeight) {
+    const neighbor = byId.get(id);
+    if (!inNeighborhood(neighbor)) continue;
+    const strength = 0.02 + 0.07 * weight / maxWeight;
+    neighbor.vx += (center.x - neighbor.x) * strength * alpha;
+    neighbor.vy += (center.y - neighbor.y) * strength * alpha;
+  }
 }
 
-function focusViewport(d) {
-  const members = nodes.filter(n => n.id === d.id || neighborWeight.has(n.id));
-  if (!members.length) return;
-  const xs = members.map(n => n.x);
-  const ys = members.map(n => n.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const spanX = Math.max(120, maxX - minX);
-  const spanY = Math.max(120, maxY - minY);
-  const scale = Math.max(0.8, Math.min(2.0, 0.72 * Math.min(width / spanX, height / spanY)));
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
-  const transform = d3.zoomIdentity
-    .translate(width / 2 - scale * cx, height / 2 - scale * cy)
-    .scale(scale);
-  svg.transition().duration(650).call(zoom.transform, transform);
+function render() {
+  const density = document.getElementById("toggle-density");
+  const expanded = focusedId ? showAllNeighbors : showFullGraph;
+  density.textContent = focusedId
+    ? (expanded ? "仅看主要邻居" : "显示全部邻居")
+    : (expanded ? "切换精简图" : "显示完整图");
+  density.setAttribute("aria-pressed", expanded);
+  density.disabled = Boolean(focusedId && neighborWeight.size <= compactNeighborCount);
+
+  node.style("display", d => isVisible(d) || isBackdrop(d) ? null : "none")
+    .style("pointer-events", d => isBackdrop(d) ? "none" : null)
+    .attr("aria-hidden", d => isVisible(d) ? null : "true")
+    .attr("tabindex", d => isVisible(d) && (focusedId || representatives.has(d.id)) ? 0 : -1);
+  node.select("circle")
+    .attr("fill", d => isBackdrop(d) ? "#a5aeb9" : color(d.community))
+    .style("opacity", d => isBackdrop(d) ? 0.32
+      : showFullGraph && !focusedId && !representatives.has(d.id) ? 0.55 : 1)
+    .attr("stroke-width", d => focusedId === d.id ? 2.8 : showFullGraph ? 0.7 : 1.4);
+  node.filter(d => isVisible(d) && (focusedId || representatives.has(d.id))).raise();
+  paintNodes(d3.zoomTransform(svg.node()).k);
+  labels.style("visibility", "hidden");
+  const visibleCount = focusedId ? 1 + (showAllNeighbors ? neighborWeight.size : strongestNeighbors.size)
+    : showFullGraph ? nodes.length : representatives.size;
+  document.getElementById("stats").textContent =
+    (focusedId ? "聚焦 " : "显示 ") + visibleCount + "/" + nodes.length + " 个概念 · " +
+    DATA.stats.communities + " 个社区 · 模块度 " + DATA.stats.modularity.toFixed(3);
+  refreshLinks();
+  simulation.force("collide").radius(d => focusedId && inNeighborhood(d) ? displayRadius(d) + 9 : baseR(d) + 4);
+  simulation.force("focus", focusedId ? focusForce : null);
+
+  const badge = document.getElementById("focus-label");
+  badge.style.display = focusedId ? "block" : "none";
+  document.getElementById("legend").hidden = Boolean(focusedId && !showFullGraph);
+  if (focusedId) {
+    badge.textContent = byId.get(focusedId).name + " · 显示 " +
+      (showAllNeighbors ? neighborWeight.size : strongestNeighbors.size) + "/" + neighborWeight.size + " 个地图内邻居";
+  }
+  document.getElementById("hint").textContent = focusedId ? "点击空白退出聚焦"
+    : (showFullGraph ? "悬停查看主要连线" : "每个社区只显示 1 个代表概念") + " · 点击节点聚焦 · 滚轮缩放";
+}
+
+function overlaps(a, b) {
+  return a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+}
+
+function placeLabels(transform, reserveSpace = false) {
+  const eligible = labels.filter(d => focusedId
+    ? d.id === focusedId || strongestNeighbors.has(d.id)
+    : representatives.has(d.id) || d.id === hoveredId);
+  labels.style("visibility", "hidden");
+  leaders.style("visibility", "hidden");
+  const placed = [];
+  const circles = nodes.filter(d => reserveSpace ? representatives.has(d.id) : isVisible(d)).map(d => {
+    const [x, y] = transform.apply([d.x, d.y]);
+    const r = worldRadius(d, transform.k) * transform.k + 3;
+    return [x - r, y - r, x + r, y + r];
+  });
+  eligible.each(function(d) {
+    const [x, y] = transform.apply([d.x, d.y]);
+    const r = worldRadius(d, transform.k) * transform.k;
+    if (x + r < 0 || x - r > width || y + r < 0 || y - r > height) return;
+    const size = d.id === focusedId ? 18 : 15;
+    const weight = d.id === focusedId ? 700 : 600;
+    const gap = 9;
+    measureLabel.font = weight + " " + size + "px Segoe UI, sans-serif";
+    const w = measureLabel.measureText(labelText(d)).width + 8;
+    const below = [x - w / 2, y + r + gap];
+    const right = [x + r + gap, y - size / 2];
+    const left = [x - r - gap - w, y - size / 2];
+    const above = [x - w / 2, y - r - size - gap];
+    const candidates = d.id === focusedId ? [below, above, right, left] : [right, left, below, above];
+    const align = u => Math.max(8, Math.min(u, width - w - 8));
+    const offsets = showFullGraph && !focusedId ? [0, 14, 28, 42, 64] : [0, 14, 28, 42];
+    for (const offset of offsets) {
+      for (const u of [below[0], x - w, x]) {
+        candidates.push([align(u), below[1] + offset], [align(u), above[1] - offset]);
+      }
+      if (offset) {
+        candidates.push([right[0] + offset, right[1]], [left[0] - offset, left[1]]);
+      }
+    }
+    for (const [u, v] of candidates) {
+      const bounds = [u, v, u + w, v + size + 4];
+      if (u < 8 || v < 8 || bounds[2] > width - 8 || bounds[3] > height - 8) continue;
+      if (circles.some(circle => overlaps(bounds, circle)) || placed.some(label => overlaps(bounds, label))) continue;
+      placed.push(bounds);
+      d3.select(this).attr("x", (u - x) / transform.k)
+        .attr("y", (v + size - y) / transform.k)
+        .attr("font-size", size / transform.k)
+        .attr("font-weight", weight)
+        .attr("stroke-width", 2.5 / transform.k)
+        .style("visibility", "visible");
+      if (showFullGraph && !focusedId) {
+        const dx = Math.max(u, Math.min(x, u + w)) - x;
+        const dy = Math.max(v, Math.min(y, v + size + 4)) - y;
+        const distance = Math.hypot(dx, dy);
+        if (distance > r + 22) {
+          const start = (r + 3) / distance;
+          d3.select(this.parentNode).select(".label-leader")
+            .attr("x1", dx * start / transform.k).attr("y1", dy * start / transform.k)
+            .attr("x2", dx / transform.k).attr("y2", dy / transform.k)
+            .attr("stroke-width", 1 / transform.k).attr("stroke", color(d.community))
+            .style("visibility", "visible");
+        }
+      }
+      break;
+    }
+  });
+  return placed;
+}
+
+function fittedTransform(visible) {
+  const minX = d3.min(visible, d => d.x - displayRadius(d));
+  const maxX = d3.max(visible, d => d.x + displayRadius(d));
+  const minY = d3.min(visible, d => d.y - displayRadius(d));
+  const maxY = d3.max(visible, d => d.y + displayRadius(d));
+  const spanX = Math.max(100, maxX - minX);
+  const spanY = Math.max(100, maxY - minY);
+  const scale = Math.max(0.15, Math.min(1.65, width * .76 / spanX, height * .76 / spanY));
+  return d3.zoomIdentity.translate(
+    width / 2 - scale * (minX + maxX) / 2,
+    height / 2 - scale * (minY + maxY) / 2
+  ).scale(scale);
+}
+
+function moveCamera(transform, animate) {
+  svg.interrupt();
+  if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    svg.transition().duration(650).ease(d3.easeCubicInOut).call(zoom.transform, transform);
+  } else {
+    svg.call(zoom.transform, transform);
+  }
+}
+
+function fitView(animate = false) {
+  const visible = nodes.filter(isVisible);
+  if (!visible.length || !width || !height) return;
+  moveCamera(fittedTransform(visible), animate);
+}
+
+function separateCommunities() {
+  const centers = d3.groups(nodes, d => d.community).map(([id, members]) => {
+    const x = d3.mean(members, d => d.x);
+    const y = d3.mean(members, d => d.y);
+    return {id, x, y, anchorX: x, anchorY: y, radius: 117 + 17 * Math.sqrt(members.length)};
+  });
+  d3.forceSimulation(centers).stop()
+    .force("anchorX", d3.forceX(d => d.anchorX).strength(0.08))
+    .force("anchorY", d3.forceY(d => d.anchorY).strength(0.08))
+    .force("spacing", d3.forceCollide(d => d.radius).iterations(3))
+    .tick(100);
+  const byCommunity = new Map(centers.map(center => [center.id, center]));
+  simulation
+    .force("communityX", d3.forceX(d => byCommunity.get(d.community).x).strength(0.16))
+    .force("communityY", d3.forceY(d => byCommunity.get(d.community).y).strength(0.16))
+    .alpha(0.8).tick(140);
+}
+
+// Keep the original force positions as anchors and make room for larger marks
+// only when settling a sparse view.
+function spaceVisibleNodes({representativesOnly = false} = {}) {
+  if (!representativesOnly && (focusedId ? showAllNeighbors : showFullGraph)) return;
+  const visible = representativesOnly ? nodes.filter(d => representatives.has(d.id)) : nodes.filter(isVisible);
+  if (visible.length < 2 || width < 100 || height < 100) return;
+  const transform = fittedTransform(representativesOnly ? nodes : visible);
+  const gap = Math.min(representativesOnly ? 36 : 56, Math.min(width, height) * 0.10);
+  const projected = visible.map(node => {
+    const [x, y] = transform.apply([node.x, node.y]);
+    return {node, x, y, anchorX: x, anchorY: y};
+  });
+  d3.forceSimulation(projected).stop()
+    .force("anchorX", d3.forceX(d => d.anchorX).strength(0.14))
+    .force("anchorY", d3.forceY(d => d.anchorY).strength(0.14))
+    .force("spacing", d3.forceCollide(gap).iterations(3))
+    .tick(75);
+  const [top, bottom] = d3.extent(projected, d => d.y);
+  const stretchY = representativesOnly ? 1
+    : Math.min(1.35, Math.max(1, height * 0.47 / Math.max(110, bottom - top)));
+  for (const {node, x, y} of projected) {
+    const spacedY = height / 2 + (y - height / 2) * stretchY;
+    [node.x, node.y] = transform.invert([
+      Math.max(gap, Math.min(x, width - gap)),
+      Math.max(gap, Math.min(spacedY, height - gap))
+    ]);
+  }
+}
+
+// Reserve only the space taken by the labels; nudge nearby ordinary points
+// along the shortest available direction, leaving their community intact.
+function makeRoomForLabels(transform) {
+  const boxes = placeLabels(transform, true);
+  const points = nodes.map(d => {
+    const [x, y] = transform.apply([d.x, d.y]);
+    return {node: d, x, y, r: worldRadius(d, transform.k) * transform.k};
+  });
+  const boxAt = (x, y, r) => [x - r, y - r, x + r, y + r];
+  for (const point of points) {
+    if (representatives.has(point.node.id)) continue;
+    const r = point.r + 3;
+    if (!boxes.some(box => overlaps(box, boxAt(point.x, point.y, r)))) continue;
+    let position;
+    for (let distance = 8; distance <= 84 && !position; distance += 4) {
+      for (let step = 0; step < 16; step++) {
+        const angle = step * Math.PI / 8;
+        const x = point.x + Math.cos(angle) * distance;
+        const y = point.y + Math.sin(angle) * distance;
+        if (x < r || x > width - r || y < r || y > height - r) continue;
+        if (boxes.some(box => overlaps(box, boxAt(x, y, r)))) continue;
+        if (points.some(other => other !== point &&
+            Math.hypot(x - other.x, y - other.y) < point.r + other.r + 2)) continue;
+        position = [x, y];
+        break;
+      }
+    }
+    if (position) {
+      [point.x, point.y] = position;
+      [point.node.x, point.node.y] = transform.invert(position);
+    }
+  }
+}
+
+function fitOverviewWithLabels() {
+  if (!nodes.length || !width || !height) return;
+  spaceVisibleNodes({representativesOnly: true});
+  const transform = fittedTransform(nodes);
+  makeRoomForLabels(transform);
+  ticked();
+  moveCamera(transform, false);
+}
+
+function updateCanvasSize() {
+  width = canvas.clientWidth;
+  height = canvas.clientHeight;
+  svg.attr("viewBox", [0, 0, width, height]);
+  simulation.force("x").x(width / 2);
+  simulation.force("y").y(height / 2);
+}
+
+function settleAndFit() {
+  updateCanvasSize();
+  simulation.stop().alpha(.35).tick(65);
+  spaceVisibleNodes();
+  ticked();
+  fitView();
 }
 
 function focusNode(d) {
-  if (focusedId === d.id) { resetFocus(); return; }
-  if (!focusedId) previousTransform = d3.zoomTransform(svg.node());
+  if (focusedId === d.id) {
+    resetFocus();
+    return;
+  }
+  if (!focusedId) {
+    overviewPositions = nodes.map(node => [node.x, node.y]);
+    overviewCamera = d3.zoomTransform(svg.node());
+    if (showFullGraph) {
+      overviewRadii = new Map(nodes.map(node => [node.id, worldRadius(node, overviewCamera.k)]));
+    }
+  }
   focusedId = d.id;
+  showAllNeighbors = false;
   neighborWeight = new Map();
-  maxWeight = 1;
-  links.forEach(l => {
-    const source = endpointId(l.source);
-    const target = endpointId(l.target);
-    if (source === d.id) {
-      neighborWeight.set(target, Math.max(neighborWeight.get(target) || 0, l.support));
-      maxWeight = Math.max(maxWeight, l.support);
-    }
-    if (target === d.id) {
-      neighborWeight.set(source, Math.max(neighborWeight.get(source) || 0, l.support));
-      maxWeight = Math.max(maxWeight, l.support);
-    }
-  });
+  for (const edge of links) {
+    if (edge.source.id === d.id) neighborWeight.set(edge.target.id, edge.support);
+    if (edge.target.id === d.id) neighborWeight.set(edge.source.id, edge.support);
+  }
+  const ranking = Array.from(neighborWeight).sort((a, b) => b[1] - a[1]);
+  strongestNeighbors = new Set(ranking.slice(0, compactNeighborCount).map(([id]) => id));
+  maxWeight = ranking[0]?.[1] || 1;
+  clearHover();
+  render();
+  if (showFullGraph) {
+    simulation.stop();
+    ticked();
+    fitView(true);
+  } else {
+    settleAndFit();
+  }
+}
 
-  node.select("circle").transition().duration(420)
-    .attr("r", n => {
-      if (n.id === d.id) return baseR(n) * 3.4;
-      if (neighborWeight.has(n.id)) {
-        return baseR(n) * (1 + 1.25 * neighborWeight.get(n.id) / maxWeight);
-      }
-      return baseR(n) * 0.5;
-    })
-    .attr("opacity", n =>
-      n.id === d.id || neighborWeight.has(n.id) ? 1 : 0.06)
-    .attr("stroke-width", n => n.id === d.id ? 3.5 : 1.4)
-    .attr("stroke", n => n.id === d.id ? "currentColor" : "#ffffff")
-    .style("filter", n =>
-      n.id === d.id ? "drop-shadow(0 0 10px rgba(44,90,134,.75))" : null);
-
-  labels.transition().duration(420)
-    .style("display", n =>
-      (showAllLabels || n.id === d.id || neighborWeight.has(n.id)) ? null : "none")
-    .attr("opacity", n =>
-      n.id === d.id || neighborWeight.has(n.id) ? 1 : 0.12)
-    .attr("font-size", n => n.id === d.id ? 14 : 10.5)
-    .attr("font-weight", n => n.id === d.id ? 700 : 400);
-
-  link.transition().duration(420)
-    .attr("stroke-opacity", l => {
-      const source = endpointId(l.source);
-      const target = endpointId(l.target);
-      return source === d.id || target === d.id ? 0.9 : 0.008;
-    })
-    .attr("stroke-width", l => {
-      const source = endpointId(l.source);
-      const target = endpointId(l.target);
-      return source === d.id || target === d.id
-        ? Math.min(5, 1.0 + Math.sqrt(l.support) / 2)
-        : 0.3;
+function resetFocus({restoreCamera = true} = {}) {
+  simulation.stop();
+  if (overviewPositions) {
+    nodes.forEach((node, index) => {
+      [node.x, node.y] = overviewPositions[index];
+      node.vx = 0;
+      node.vy = 0;
     });
-
-  node.filter(n => n.id === d.id || neighborWeight.has(n.id)).raise();
-  simulation.force("focus", focusForce);
-  const badge = document.getElementById("focus-label");
-  badge.style.display = "block";
-  badge.textContent =
-    `聚焦：${d.name} · 社区 ${d.community} · ${neighborWeight.size} 个直接邻居`;
-  simulation.alpha(0.4).restart();
-  document.getElementById("legend").hidden = true;
-  const token = ++focusToken;
-  setTimeout(() => {
-    if (token === focusToken && focusedId === d.id) focusViewport(d);
-  }, 650);
-}
-
-function resetFocus() {
-  focusToken++;
+    overviewPositions = null;
+  }
+  const camera = overviewCamera;
+  overviewCamera = null;
+  overviewRadii = null;
   focusedId = null;
-  neighborWeight = new Map();
-  document.getElementById("legend").hidden = false;
-  node.select("circle").transition().duration(420)
-    .attr("r", baseR)
-    .attr("opacity", 1)
-    .attr("stroke-width", 1.4)
-    .attr("stroke", "#ffffff")
-    .style("filter", null);
-  labels.transition().duration(420)
-    .style("display", n => (showAllLabels || n.total >= 2000) ? null : "none")
-    .attr("opacity", 1)
-    .attr("font-size", 9.5)
-    .attr("font-weight", 400);
-  link.transition().duration(420)
-    .attr("stroke-opacity", d => 0.035 + 0.09 * Math.min(1, d.support / 80))
-    .attr("stroke-width", d => Math.min(2.4, 0.25 + Math.sqrt(d.support) / 7));
-  simulation.force("focus", null);
-  document.getElementById("focus-label").style.display = "none";
-  svg.transition().duration(650).call(zoom.transform, previousTransform);
-  simulation.alpha(0.2).restart();
+  neighborWeight.clear();
+  strongestNeighbors.clear();
+  clearHover();
+  render();
+  updateCanvasSize();
+  ticked();
+  if (camera && showFullGraph && restoreCamera) moveCamera(camera, true);
+  else fitView();
 }
 
-svg.on("click", resetFocus);
+svg.on("click", () => { if (focusedId) resetFocus(); });
 
 function showTooltip(event, d) {
+  if (!focusedId && showFullGraph) {
+    hoveredId = d.id;
+    refreshLinks();
+    placeLabels(d3.zoomTransform(svg.node()));
+  }
   const tooltip = document.getElementById("tooltip");
-  tooltip.innerHTML =
-    `<b>${d.name}</b><br>` +
-    `社区 ${d.community} · 论文 ${d.total}<br>` +
-    `betweenness ${d.betweenness.toFixed(4)} · degree ${d.degree}`;
+  tooltip.textContent = d.name + " · 社区 " + d.community + " · " + d.total + " 篇论文" +
+    (focusedId && neighborWeight.has(d.id) ? " · 共现 " + neighborWeight.get(d.id) + " 篇" : "");
   tooltip.style.display = "block";
   moveTooltip(event);
 }
 function moveTooltip(event) {
   const tooltip = document.getElementById("tooltip");
-  const rect = main.getBoundingClientRect();
-  let x = event.clientX - rect.left + 14;
-  let y = event.clientY - rect.top + 14;
-  if (x + 270 > width) x -= 285;
-  if (y + 90 > height) y -= 100;
-  tooltip.style.left = `${x}px`;
-  tooltip.style.top = `${y}px`;
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.max(4, Math.min(event.clientX - rect.left + 14, width - tooltip.offsetWidth - 4));
+  const y = Math.max(4, Math.min(event.clientY - rect.top + 14, height - tooltip.offsetHeight - 4));
+  tooltip.style.left = x + "px";
+  tooltip.style.top = y + "px";
 }
-function hideTooltip() {
+function clearHover() {
   document.getElementById("tooltip").style.display = "none";
+  if (!hoveredId) return;
+  hoveredId = null;
+  refreshLinks();
+  placeLabels(d3.zoomTransform(svg.node()));
 }
 
 document.getElementById("reset-view").addEventListener("click", () => {
-  if (focusedId) {
-    resetFocus();
-  } else {
-    svg.transition().duration(650).call(zoom.transform, d3.zoomIdentity);
-  }
+  resetFocus({restoreCamera: false});
 });
 document.getElementById("reheat").addEventListener("click", () => {
-  simulation.alpha(1).restart();
+  simulation.stop().alpha(1).tick(100);
+  if (showFullGraph && !focusedId) fitOverviewWithLabels();
+  else {
+    spaceVisibleNodes();
+    ticked();
+    fitView();
+  }
 });
-document.getElementById("toggle-labels").addEventListener("click", event => {
-  showAllLabels = !showAllLabels;
-  event.target.textContent = showAllLabels ? "隐藏全部标签" : "显示全部标签";
-  labels.style("display", n => {
-    if (showAllLabels) return null;
-    if (focusedId) return n.id === focusedId || neighborWeight.has(n.id) ? null : "none";
-    return n.total >= 2000 ? null : "none";
-  });
+document.getElementById("toggle-density").addEventListener("click", () => {
+  if (focusedId) showAllNeighbors = !showAllNeighbors;
+  else showFullGraph = !showFullGraph;
+  clearHover();
+  render();
+  if (focusedId && !showFullGraph) settleAndFit();
+  else {
+    ticked();
+    fitView(Boolean(focusedId));
+  }
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && focusedId) resetFocus();
 });
 
 const legendBody = document.getElementById("legend-body");
@@ -469,21 +756,18 @@ DATA.communities.forEach(community => {
 });
 
 const focusParam = new URLSearchParams(location.search).get("focus");
-if (focusParam) {
-  setTimeout(() => {
-    const target = nodes.find(n =>
-      n.id === focusParam || n.name.toLowerCase() === focusParam.toLowerCase());
-    if (target) focusNode(target);
-  }, 1800);
-}
-
-window.addEventListener("resize", () => {
-  width = main.clientWidth;
-  height = main.clientHeight;
-  svg.attr("viewBox", [0, 0, width, height]);
-  simulation.force("center", d3.forceCenter(width / 2, height / 2));
-  simulation.alpha(0.3).restart();
-});
+const initialFocus = focusParam && (byId.get(focusParam) ||
+  nodes.find(d => d.name.toLowerCase() === focusParam.toLowerCase()));
+simulation.stop().tick(130);
+separateCommunities();
+render();
+fitOverviewWithLabels();
+if (initialFocus) focusNode(initialFocus);
+new ResizeObserver(() => {
+  if (width === canvas.clientWidth && height === canvas.clientHeight) return;
+  updateCanvasSize();
+  fitView();
+}).observe(canvas);
 </script>
 </body>
 </html>
